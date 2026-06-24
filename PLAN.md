@@ -46,6 +46,21 @@ Full setup details: [`ARCHITECTURE.md` §10](ARCHITECTURE.md#10-local-developmen
 
 ---
 
+## Git commit conventions
+
+Follow **[Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/)**. Commit in small steps — the intern guideline reviews your git history.
+
+### Types for this project
+
+| Type | When to use | Example |
+|------|-------------|---------|
+| `feat` | New user-facing capability | `feat(api): add snippet search endpoint` |
+| `fix` | Bug fix | `fix(frontend): show error state when API is down` |
+| `docs` | README, PLAN, PRD, NOTES only | `docs: add local setup instructions` |
+| `test` | Add or update tests | `test(api): cover snippet 404 responses` |
+
+---
+
 ## Phase 1: Learning (2–3 hours)
 
 Goal: understand *enough* to explain every line you submit. Focus on concepts directly used by this challenge.
@@ -130,37 +145,43 @@ You are ready to execute when you can answer without looking:
 
 ## Phase 3: Execution (5–7 hours) — NEXT
 
-Execute in **small git commits** (guideline explicitly reviews commit history).
+Execute in **small Conventional Commits** — one logical step per commit (see [Git commit conventions](#git-commit-conventions) above). The guideline explicitly reviews commit history.
 
 ### Milestone A — Backend foundation (~2h)
 
-1. Init repo + `.gitignore`
-2. Backend scaffold — FastAPI app, PostgreSQL connection, `Snippet` model
-3. CRUD endpoints — `POST/GET/GET:id/PUT/DELETE /snippets`
-4. Pagination — `GET /snippets?page=1&limit=10`
-5. Search — `GET /search?q=...`
-6. Health — `GET /health`
-7. Seed script — load 25 sample snippets
-8. Manual test — Swagger UI; verify `liability`, `termination`, `dispute` searches
+| Step | Suggested commit |
+|------|------------------|
+| 1. Init repo + `.gitignore` | `feat: add gitignore for python and node` |
+| 2. Backend scaffold — FastAPI, PostgreSQL, `Snippet` model | `feat(backend): scaffold fastapi app and postgres connection` |
+| 3. CRUD endpoints | `feat(api): add snippet CRUD routes` |
+| 4. Pagination | `feat(api): add paginated snippet list` |
+| 5. Search | `feat(api): add keyword search endpoint` |
+| 6. Health | `feat(api): add health check endpoint` |
+| 7. Seed script | `feat(db): add seed script with sample snippets` |
+| 8. Manual test | _(no commit — verify in Swagger)_ |
 
 ### Milestone B — Frontend (~2.5h)
 
-9. Next.js scaffold — App Router, `lib/api.ts`, env example
-10. Search page — debounced fetch, loading/error/empty states
-11. Detail page — `/snippets/[id]`
-12. Create form — `/snippets/new`
-13. Edit form — `/snippets/[id]/edit`
-14. CORS + E2E smoke test
+| Step | Suggested commit |
+|------|------------------|
+| 9. Next.js scaffold | `feat(frontend): scaffold next.js app router` |
+| 10. Search page | `feat(frontend): add search page with loading states` |
+| 11. Detail page | `feat(frontend): add snippet detail view` |
+| 12. Create form | `feat(frontend): add snippet create form` |
+| 13. Edit form | `feat(frontend): add snippet edit form` |
+| 14. CORS + E2E smoke test | `fix(api): configure cors for local frontend` _(if needed)_ |
 
 ### Milestone C — Submission polish (~1h)
 
-15. `README.md` — setup commands, sample `.env`
-16. `NOTES.md` — decisions, AI usage, improvements
-17. Final commit — lint/format pass
-18. Implement Docker Compose for development and testing environments
-19. Add Full Text Search (FTS) capability to snippet search
-20. Implement result highlighting for search matches
-21. Write and maintain pytest tests for backend coverage
+| Step | Suggested commit |
+|------|------------------|
+| 15. `README.md` | `docs: add setup and env instructions` |
+| 16. `NOTES.md` | `docs: add project notes and decisions` |
+| 17. Lint/format pass | `fix: apply lint and format fixes` |
+| 18. Docker Compose | `feat: add docker-compose for development` |
+| 19. Full-text search | `feat(api): add postgres full-text search` |
+| 20. Search highlighting | `feat(frontend): highlight search matches in results` |
+| 21. Pytest tests | `test(api): add backend test coverage` |
 
 ### Time-boxing priority (drop from bottom up)
 
@@ -190,3 +211,4 @@ Execute in **small git commits** (guideline explicitly reviews commit history).
 
 ### Full-stack
 - [FastAPI Interactive Docs (Swagger)](https://fastapi.tiangolo.com/features/#automatic-docs)
+- [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) — commit message format for this project
