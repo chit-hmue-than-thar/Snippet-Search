@@ -30,7 +30,19 @@ flowchart LR
   phase1 --> phase2 --> phase3
 ```
 
-**Rule of thumb:** Spend ~2–3h learning, ~1–2h planning, ~5–7h executing. Do not start coding until PRD and ARCHITECTURE are written — they prevent rework and are what you will explain in the interview.
+---
+
+## Tool versions (June 2026)
+
+Use current LTS/stable releases — the old minimums (Python 3.11, Node 18, PostgreSQL 14) are outdated or near EOL.
+
+| Tool | Use |
+|------|-----|
+| **Python 3.13+** | Backend / FastAPI |
+| **Node.js 22 LTS+** (or **24 LTS**) | Next.js frontend |
+| **PostgreSQL 17+** | Database |
+
+Full setup details: [`ARCHITECTURE.md` §10](ARCHITECTURE.md#10-local-development)
 
 ---
 
@@ -145,7 +157,10 @@ Execute in **small git commits** (guideline explicitly reviews commit history).
 15. `README.md` — setup commands, sample `.env`
 16. `NOTES.md` — decisions, AI usage, improvements
 17. Final commit — lint/format pass
-18. Optional: Docker Compose, FTS search, highlight matches, pytest tests
+18. Implement Docker Compose for development and testing environments
+19. Add Full Text Search (FTS) capability to snippet search
+20. Implement result highlighting for search matches
+21. Write and maintain pytest tests for backend coverage
 
 ### Time-boxing priority (drop from bottom up)
 

@@ -333,9 +333,19 @@ Run: `python -m seed` from `backend/` directory.
 
 ### Prerequisites
 
-- Python 3.11+
-- Node.js 18+
-- PostgreSQL 14+ running locally
+| Tool | Minimum | Recommended (June 2026) | Notes |
+|------|---------|------------------------|-------|
+| **Python** | 3.13+ | 3.13.x | 3.11–3.12 still work with FastAPI; 3.13 is current stable with active bugfix support |
+| **Node.js** | 22 LTS+ | 24 LTS (Krypton) or 22 LTS (Jod) | Node 18/20 are EOL — use an Active LTS release for Next.js |
+| **PostgreSQL** | 17+ | 17.x | PostgreSQL 14 reaches EOL Nov 2026; 17 is the current stable major |
+
+Install checks:
+
+```bash
+python --version    # Python 3.13.x
+node --version    # v22.x or v24.x
+psql --version    # PostgreSQL 17.x
+```
 
 ### Startup order
 
