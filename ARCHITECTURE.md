@@ -48,7 +48,9 @@ snippet-search/
 ├── ARCHITECTURE.md          # this file
 ├── README.md                # setup instructions (Phase 3)
 ├── NOTES.md                 # submission notes (Phase 3)
+├── docker-compose.yml       # PostgreSQL + backend API (project init)
 ├── backend/
+│   ├── Dockerfile           # FastAPI image
 │   ├── app/
 │   │   ├── __init__.py
 │   │   ├── main.py              # FastAPI app, CORS, router registration
@@ -335,36 +337,72 @@ Run: `python -m seed` from `backend/` directory.
 
 | Tool | Minimum | Recommended (June 2026) | Notes |
 |------|---------|------------------------|-------|
-| **Python** | 3.13+ | 3.13.x | 3.11–3.12 still work with FastAPI; 3.13 is current stable with active bugfix support |
-| **Node.js** | 22 LTS+ | 24 LTS (Krypton) or 22 LTS (Jod) | Node 18/20 are EOL — use an Active LTS release for Next.js |
-| **PostgreSQL** | 17+ | 17.x | PostgreSQL 14 reaches EOL Nov 2026; 17 is the current stable major |
+| **Docker** | Docker Desktop 4.x+ | Latest stable | **Required** — PostgreSQL and backend run via Compose at project init |
+| **Python** | 3.13+ | 3.13.x | Optional — only if running backend outside Docker |
+| **Node.js** | 22 LTS+ | 24 LTS (Krypton) or 22 LTS (Jod) | Required for Next.js frontend (runs on host) |
+| **PostgreSQL** | 17+ | 17.x | Provided by Docker — no local install needed when using Compose |
 
 Install checks:
 
 ```bash
-python --version    # Python 3.13.x
-node --version    # v22.x or v24.x
-psql --version    # PostgreSQL 17.x
+docker --version          # Docker 24+ or Docker Desktop
+docker compose version
+node --version            # v22.x or v24.x (frontend)
+python --version          # Python 3.13.x (only if running backend outside Docker)
 ```
 
-### Startup order
+### Docker setup (primary — project initialization)
+
+Docker Compose is created during **project initialization**, not as a later add-on. Pattern inspired by [full-stack-fastapi-template](https://github.com/fastapi/full-stack-fastapi-template) `docker-compose.yml`.
+
+**Services:**
+
+| Service | Image / build | Port | Purpose |
+|---------|---------------|------|---------|
+| `db` | `postgres:17` | `5432` | PostgreSQL database |
+| `api` | `backend/Dockerfile` | `8000` | FastAPI app |
+
+**Root `docker-compose.yml` (conceptual):**
+
+```yaml
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: snippet_search
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/snippet_search
+      CORS_ORIGINS: http://localhost:3000
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
+```
+
+**Init workflow:**
 
 ```bash
-# 1. Create database
-createdb snippet_search
+# 1. Start database + API
+docker compose up -d
 
-# 2. Backend
-cd backend
-cp .env.example .env
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+# 2. Seed (once API is healthy)
+docker compose exec api python seed.py
 
-# 3. Seed (optional)
-python seed.py
-
-# 4. Frontend
+# 3. Frontend (on host)
 cd frontend
-cp .env.local.example .env.local
+cp .env.local.example .env.local   # NEXT_PUBLIC_API_URL=http://localhost:8000
 npm install
 npm run dev
 ```
@@ -375,17 +413,30 @@ npm run dev
 - App: http://localhost:3000
 - Health: http://localhost:8000/health
 
+### Alternative: run backend without Docker
+
+If you prefer a native Python environment, install PostgreSQL 17 locally:
+
+```bash
+createdb snippet_search
+cd backend
+cp .env.example .env
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+python seed.py
+```
+
 ---
 
 ## 11. Future improvements
 
 | Improvement | Effort | Notes |
 |-------------|--------|-------|
-| Docker Compose | Medium | Mirror full-stack-fastapi-template `docker-compose.yml` pattern |
 | Alembic migrations | Low | Add when schema changes |
 | Full-text search | Medium | Replace ILIKE with `tsvector` + ranking |
 | Search highlight | Low | Wrap matched terms in `<mark>` on frontend |
 | Pytest suite | Medium | Test CRUD + search + 404 cases |
 | `updated_at` column | Low | Track last edit time |
+| Frontend in Compose | Low | Add `frontend` service to `docker-compose.yml` |
 
 These map directly to the "what you'd improve" section in `NOTES.md`.

@@ -38,9 +38,10 @@ Use current LTS/stable releases — the old minimums (Python 3.11, Node 18, Post
 
 | Tool | Use |
 |------|-----|
-| **Python 3.13+** | Backend / FastAPI |
-| **Node.js 22 LTS+** (or **24 LTS**) | Next.js frontend |
-| **PostgreSQL 17+** | Database |
+| **Docker Desktop** | PostgreSQL + backend API via Compose (project init) |
+| **Python 3.13+** | Backend / FastAPI (optional if using Docker for API) |
+| **Node.js 22 LTS+** (or **24 LTS**) | Next.js frontend (runs on host) |
+| **PostgreSQL 17+** | Via Docker `postgres:17` image — no local install required |
 
 Full setup details: [`ARCHITECTURE.md` §10](ARCHITECTURE.md#10-local-development)
 
@@ -113,7 +114,8 @@ Goal: understand *enough* to explain every line you submit. Focus on concepts di
 | Backend folder layout (`app/api`, `app/models`, `app/schemas`, `app/crud`) | Frontend is **Next.js** per challenge (template uses React) |
 | `get_db` dependency injection pattern | Simpler — no auth, no users |
 | Pydantic schemas separate from SQLAlchemy models | Single `snippets` resource instead of items/users |
-| `.env` + settings pattern | No Docker required for v1 (optional nice-to-have) |
+| `.env` + settings pattern | Use from day one |
+| `docker-compose.yml` + `backend/Dockerfile` | **Project init** — Postgres 17 + API (see full-stack-fastapi-template) |
 | Seed / initial data approach | Use the 25 legal snippets from `INTERN_GUIDELINE.md` |
 
 Clone locally for reference:
@@ -151,14 +153,14 @@ Execute in **small Conventional Commits** — one logical step per commit (see [
 
 | Step | Suggested commit |
 |------|------------------|
-| 1. Init repo + `.gitignore` | `feat: add gitignore for python and node` |
+| 1. Init repo + `.gitignore` + Docker Compose | `feat: add docker-compose and backend dockerfile` |
 | 2. Backend scaffold — FastAPI, PostgreSQL, `Snippet` model | `feat(backend): scaffold fastapi app and postgres connection` |
 | 3. CRUD endpoints | `feat(api): add snippet CRUD routes` |
 | 4. Pagination | `feat(api): add paginated snippet list` |
 | 5. Search | `feat(api): add keyword search endpoint` |
 | 6. Health | `feat(api): add health check endpoint` |
 | 7. Seed script | `feat(db): add seed script with sample snippets` |
-| 8. Manual test | _(no commit — verify in Swagger)_ |
+| 8. Manual test | _(no commit — verify via `docker compose up` + Swagger)_ |
 
 ### Milestone B — Frontend (~2.5h)
 
@@ -178,10 +180,9 @@ Execute in **small Conventional Commits** — one logical step per commit (see [
 | 15. `README.md` | `docs: add setup and env instructions` |
 | 16. `NOTES.md` | `docs: add project notes and decisions` |
 | 17. Lint/format pass | `fix: apply lint and format fixes` |
-| 18. Docker Compose | `feat: add docker-compose for development` |
-| 19. Full-text search | `feat(api): add postgres full-text search` |
-| 20. Search highlighting | `feat(frontend): highlight search matches in results` |
-| 21. Pytest tests | `test(api): add backend test coverage` |
+| 18. Full-text search | `feat(api): add postgres full-text search` |
+| 19. Search highlighting | `feat(frontend): highlight search matches in results` |
+| 20. Pytest tests | `test(api): add backend test coverage` |
 
 ### Time-boxing priority (drop from bottom up)
 
@@ -190,7 +191,7 @@ Execute in **small Conventional Commits** — one logical step per commit (see [
 3. Detail view
 4. Create form
 5. Edit form
-6. Seed script, Docker, FTS, tests
+6. Seed script, FTS, tests
 
 ---
 

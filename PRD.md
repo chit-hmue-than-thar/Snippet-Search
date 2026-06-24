@@ -49,10 +49,17 @@ Users need a simple app to **save short text entries (snippets)** with a title, 
 
 ### Submission
 
-- `README.md` — setup and run instructions + sample `.env`
+- `README.md` — setup and run instructions (Docker Compose as primary path) + sample `.env`
 - `NOTES.md` — decisions, AI usage, future improvements
 - Git history with small, meaningful commits
 - Zip or Drive link to `hello@etverdict.com` before **Sunday 28 June 2026, 16:00 CEST**
+
+### Project initialization
+
+- `docker-compose.yml` at repo root — **PostgreSQL 17** + **FastAPI backend**
+- `backend/Dockerfile` — API container image
+- Frontend runs on host via `npm run dev` (points at `http://localhost:8000`)
+- Pattern inspired by [full-stack-fastapi-template](https://github.com/fastapi/full-stack-fastapi-template)
 
 ---
 
@@ -248,7 +255,6 @@ Base URL: `http://localhost:8000` (development)
 | Feature | Priority |
 |---------|----------|
 | Seed script with 25 sample snippets | High — saves testing time |
-| Docker Compose (Postgres + API) | Medium |
 | PostgreSQL full-text search with ranking | Medium |
 | Highlight matched words in search results | Low |
 | Pytest tests for CRUD + search | Low |
