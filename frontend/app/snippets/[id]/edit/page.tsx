@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Button, Container, Typography } from "@mui/material";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import SnippetForm, { type SnippetFormValues } from "@/components/SnippetForm";
-import LoadingMessage from "@/components/LoadingMessage";
+import { useCallback, useEffect, useState } from "react";
 import ErrorMessage from "@/components/ErrorMessage";
+import LoadingMessage from "@/components/LoadingMessage";
+import SnippetForm, { type SnippetFormValues } from "@/components/SnippetForm";
 import { ApiError, getSnippet, updateSnippet } from "@/lib/api";
 
 export default function EditSnippetPage() {
@@ -53,30 +54,41 @@ export default function EditSnippetPage() {
 
   if (notFound) {
     return (
-      <div className="state-message">
-        <p>Snippet not found.</p>
-        <Link href="/">Back to search</Link>
-      </div>
+      <Container maxWidth="md" sx={{ py: 4, textAlign: "center" }}>
+        <Typography color="text.secondary" gutterBottom>
+          Snippet not found.
+        </Typography>
+        <Button component={Link} href="/" variant="outlined">
+          Back to search
+        </Button>
+      </Container>
     );
   }
 
   if (error) {
-    return <ErrorMessage message={error} onRetry={load} />;
+    return (
+      <Container maxWidth="md" sx={{ py: 4 }}>
+        <ErrorMessage message={error} onRetry={load} />
+      </Container>
+    );
   }
 
   if (!initial) return null;
 
   return (
-    <div>
-      <h1>Edit snippet</h1>
+    <Container maxWidth="md" sx={{ py: { xs: 2, md: 4 } }}>
+      <Typography variant="h4" gutterBottom>
+        Edit snippet
+      </Typography>
       <SnippetForm
         initial={initial}
         submitLabel="Save changes"
+        requireUpdateConfirm
         onSubmit={async (data) => {
           const snippet = await updateSnippet(id, data);
           router.push(`/snippets/${snippet.id}`);
         }}
       />
-    </div>
+    </Container>
   );
 }
