@@ -1,7 +1,18 @@
 "use client";
 
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { FormEvent, useState } from "react";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import type { SnippetCreate } from "@/lib/api";
+import { appPalette } from "@/theme/palette";
 
 export interface SnippetFormValues {
   title: string;
@@ -13,27 +24,26 @@ export default function SnippetForm({
   initial,
   submitLabel,
   onSubmit,
+  requireUpdateConfirm = false,
 }: {
   initial?: SnippetFormValues;
   submitLabel: string;
   onSubmit: (data: SnippetCreate) => Promise<void>;
+  requireUpdateConfirm?: boolean;
 }) {
   const [title, setTitle] = useState(initial?.title ?? "");
   const [body, setBody] = useState(initial?.body ?? "");
   const [tags, setTags] = useState(initial?.tags ?? "");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingData, setPendingData] = useState<SnippetCreate | null>(null);
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  async function save(data: SnippetCreate) {
     setError(null);
     setSubmitting(true);
     try {
-      const tagList = tags
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean);
-      await onSubmit({ title: title.trim(), body: body.trim(), tags: tagList });
+      await onSubmit(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save snippet");
     } finally {
@@ -41,35 +51,88 @@ export default function SnippetForm({
     }
   }
 
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    const tagList = tags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+    const data = { title: title.trim(), body: body.trim(), tags: tagList };
+
+    if (requireUpdateConfirm) {
+      setPendingData(data);
+      setShowConfirm(true);
+      return;
+    }
+
+    void save(data);
+  }
+
   return (
-    <form className="snippet-form" onSubmit={handleSubmit}>
-      <label>
-        Title
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-          maxLength={200}
-        />
-      </label>
-      <label>
-        Body
-        <textarea value={body} onChange={(e) => setBody(e.target.value)} required rows={8} />
-      </label>
-      <label>
-        Tags (comma-separated)
-        <input
-          type="text"
-          value={tags}
-          onChange={(e) => setTags(e.target.value)}
-          placeholder="contract, clause"
-        />
-      </label>
-      {error && <p className="form-error">{error}</p>}
-      <button type="submit" disabled={submitting}>
-        {submitting ? "Saving…" : submitLabel}
-      </button>
-    </form>
+    <>
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
+        sx={{
+          p: 3,
+          bgcolor: "background.paper",
+          borderRadius: 2,
+          border: `1px solid ${appPalette.color2}`,
+        }}
+      >
+        <Stack spacing={2.5}>
+          <TextField
+            label="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            fullWidth
+            inputProps={{ maxLength: 200 }}
+          />
+          <TextField
+            label="Body"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            required
+            fullWidth
+            multiline
+            minRows={8}
+          />
+          <TextField
+            label="Tags (comma-separated)"
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            fullWidth
+            placeholder="contract, clause"
+          />
+          {error && <Alert severity="error">{error}</Alert>}
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={submitting}
+            startIcon={submitting ? <CircularProgress size={18} color="inherit" /> : undefined}
+            sx={{ alignSelf: "flex-start" }}
+          >
+            {submitting ? "Saving…" : submitLabel}
+          </Button>
+        </Stack>
+      </Box>
+
+      <ConfirmDialog
+        open={showConfirm}
+        title="Confirm update"
+        message="Are you sure you want to save these changes to the snippet?"
+        confirmLabel="Confirm"
+        cancelLabel="Cancel"
+        onConfirm={() => {
+          setShowConfirm(false);
+          if (pendingData) void save(pendingData);
+        }}
+        onCancel={() => {
+          setShowConfirm(false);
+          setPendingData(null);
+        }}
+      />
+    </>
   );
 }

@@ -1,3 +1,7 @@
+"use client";
+
+import { Alert, Button } from "@mui/material";
+
 export default function ErrorMessage({
   message,
   onRetry,
@@ -6,13 +10,17 @@ export default function ErrorMessage({
   onRetry?: () => void;
 }) {
   return (
-    <div className="state-message error">
-      <p>{message}</p>
-      {onRetry && (
-        <button type="button" onClick={onRetry}>
-          Retry
-        </button>
-      )}
-    </div>
+    <Alert
+      severity="error"
+      action={
+        onRetry ? (
+          <Button color="inherit" size="small" onClick={onRetry}>
+            Retry
+          </Button>
+        ) : undefined
+      }
+    >
+      {message}
+    </Alert>
   );
 }
