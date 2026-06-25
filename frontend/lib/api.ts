@@ -36,6 +36,19 @@ export interface SearchResponse {
   results: SearchResult[];
 }
 
+export interface SnippetSummary {
+  id: number;
+  title: string;
+  tags: string[];
+}
+
+export interface PaginatedSnippets {
+  items: SnippetSummary[];
+  page: number;
+  limit: number;
+  total: number;
+}
+
 async function handleResponse<T>(response: Response): Promise<T> {
   if (response.ok) {
     if (response.status === 204) {
@@ -62,6 +75,15 @@ export async function searchSnippets(q: string): Promise<SearchResponse> {
   const params = new URLSearchParams({ q });
   const response = await fetch(`${API_URL}/search?${params}`);
   return handleResponse<SearchResponse>(response);
+}
+
+export async function listSnippets(page = 1, limit = 50): Promise<PaginatedSnippets> {
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+  });
+  const response = await fetch(`${API_URL}/snippets?${params}`);
+  return handleResponse<PaginatedSnippets>(response);
 }
 
 export async function getSnippet(id: number): Promise<Snippet> {
