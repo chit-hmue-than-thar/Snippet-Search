@@ -20,6 +20,13 @@ class SnippetCreate(BaseModel):
             raise ValueError("title must not be empty")
         return value
 
+    @field_validator("body")
+    @classmethod
+    def body_not_empty(cls, value: str) -> str:
+        if not value:
+            raise ValueError("body must not be empty")
+        return value
+
 
 class SnippetUpdate(SnippetCreate):
     pass
