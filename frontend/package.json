@@ -6,7 +6,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "env:setup": "node -e \"const fs=require('fs');if(!fs.existsSync('.env.local')){fs.copyFileSync('.env.local.example','.env.local');console.log('Created .env.local')}else{console.log('.env.local already exists')}\"",
+    "docker:up": "docker compose --project-directory .. up -d --build",
+    "docker:down": "docker compose --project-directory .. down",
+    "docker:reset": "docker compose --project-directory .. down -v",
+    "docker:seed": "docker compose --project-directory .. exec api python seed.py",
+    "docker:logs": "docker compose --project-directory .. logs -f api",
+    "docker:status": "docker ps --filter name=snippetsearch",
+    "docker:health": "curl.exe -s http://localhost:8000/health",
+    "setup": "npm run env:setup && npm run docker:up && npm run docker:seed",
+    "stack:up": "npm run docker:up && npm run docker:seed"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",
