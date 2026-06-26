@@ -1,0 +1,19 @@
+{
+  "name": "snippet-search",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "env:setup": "npm run env:setup --prefix frontend",
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down",
+    "docker:reset": "docker compose down -v",
+    "docker:seed": "docker compose exec api python seed.py",
+    "docker:logs": "docker compose logs -f api",
+    "docker:status": "docker ps --filter name=snippetsearch",
+    "docker:health": "curl.exe -s http://localhost:8000/health",
+    "frontend:install": "npm install --prefix frontend",
+    "frontend:dev": "npm run dev --prefix frontend",
+    "frontend:build": "npm run build --prefix frontend",
+    "setup": "npm run env:setup && npm run frontend:install && npm run docker:up && npm run docker:seed"
+  }
+}
