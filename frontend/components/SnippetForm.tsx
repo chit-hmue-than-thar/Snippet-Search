@@ -7,9 +7,8 @@ import {
   CircularProgress,
   Stack,
   TextField,
-  Typography,
 } from "@mui/material";
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import type { SnippetCreate } from "@/lib/api";
 import { appPalette } from "@/theme/palette";
@@ -18,6 +17,46 @@ export interface SnippetFormValues {
   title: string;
   body: string;
   tags: string;
+}
+
+const TITLE_MAX = 200;
+const TAG_MAX = 100;
+
+function parseTags(raw: string): string[] {
+  return raw
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
+}
+
+function tagsEqual(a: string, b: string): boolean {
+  return parseTags(a).join("\0") === parseTags(b).join("\0");
+}
+
+function validateForm(title: string, body: string, tags: string) {
+  const errors: { title?: string; body?: string; tags?: string } = {};
+
+  const trimmedTitle = title.trim();
+  if (!trimmedTitle) {
+    errors.title = "Title is required.";
+  } else if (trimmedTitle.length > TITLE_MAX) {
+    errors.title = `Title must be at most ${TITLE_MAX} characters.`;
+  }
+
+  const trimmedBody = body.trim();
+  if (!trimmedBody) {
+    errors.body = "Body is required.";
+  }
+
+  const tagList = parseTags(tags);
+  for (const tag of tagList) {
+    if (tag.length > TAG_MAX) {
+      errors.tags = `Each tag must be at most ${TAG_MAX} characters.`;
+      break;
+    }
+  }
+
+  return errors;
 }
 
 export default function SnippetForm({
@@ -34,13 +73,29 @@ export default function SnippetForm({
   const [title, setTitle] = useState(initial?.title ?? "");
   const [body, setBody] = useState(initial?.body ?? "");
   const [tags, setTags] = useState(initial?.tags ?? "");
+  const [fieldErrors, setFieldErrors] = useState<{
+    title?: string;
+    body?: string;
+    tags?: string;
+  }>({});
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [pendingData, setPendingData] = useState<SnippetCreate | null>(null);
 
+  const hasChanges = useMemo(() => {
+    if (!initial) return true;
+    return (
+      title.trim() !== initial.title.trim() ||
+      body.trim() !== initial.body.trim() ||
+      !tagsEqual(tags, initial.tags)
+    );
+  }, [initial, title, body, tags]);
+
   async function save(data: SnippetCreate) {
     setError(null);
+    setInfo(null);
     setSubmitting(true);
     try {
       await onSubmit(data);
@@ -53,11 +108,22 @@ export default function SnippetForm({
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    const tagList = tags
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
-    const data = { title: title.trim(), body: body.trim(), tags: tagList };
+    setInfo(null);
+
+    const errors = validateForm(title, body, tags);
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    const data: SnippetCreate = {
+      title: title.trim(),
+      body: body.trim(),
+      tags: parseTags(tags),
+    };
+
+    if (requireUpdateConfirm && initial && !hasChanges) {
+      setInfo("No changes to update. Modify title, body, or tags before saving.");
+      return;
+    }
 
     if (requireUpdateConfirm) {
       setPendingData(data);
@@ -84,43 +150,63 @@ export default function SnippetForm({
           <TextField
             label="Title"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              setFieldErrors((prev) => ({ ...prev, title: undefined }));
+            }}
             required
             fullWidth
-            inputProps={{ maxLength: 200 }}
+            error={Boolean(fieldErrors.title)}
+            helperText={fieldErrors.title ?? `String, max ${TITLE_MAX} characters`}
+            inputProps={{ maxLength: TITLE_MAX }}
           />
           <TextField
             label="Body"
             value={body}
-            onChange={(e) => setBody(e.target.value)}
+            onChange={(e) => {
+              setBody(e.target.value);
+              setFieldErrors((prev) => ({ ...prev, body: undefined }));
+            }}
             required
             fullWidth
             multiline
             minRows={8}
+            error={Boolean(fieldErrors.body)}
+            helperText={fieldErrors.body ?? "Text, required"}
           />
           <TextField
             label="Tags (comma-separated)"
             value={tags}
-            onChange={(e) => setTags(e.target.value)}
+            onChange={(e) => {
+              setTags(e.target.value);
+              setFieldErrors((prev) => ({ ...prev, tags: undefined }));
+            }}
             fullWidth
             placeholder="contract, clause"
+            error={Boolean(fieldErrors.tags)}
+            helperText={fieldErrors.tags ?? "List of strings, optional"}
           />
+          {info && <Alert severity="info">{info}</Alert>}
           {error && <Alert severity="error">{error}</Alert>}
           <Button
             type="submit"
             variant="contained"
             disabled={submitting}
-            startIcon={submitting ? <CircularProgress size={18} color="inherit" /> : undefined}
-            sx={{ alignSelf: "flex-start" }}
+            sx={{
+              alignSelf: "flex-start",
+              minWidth: 150,
+              height: 40,
+              px: 3,
+            }}
           >
-            {submitting ? "Saving…" : submitLabel}
+            {submitting ? <CircularProgress size={22} color="inherit" /> : submitLabel}
           </Button>
         </Stack>
       </Box>
 
       <ConfirmDialog
         open={showConfirm}
-        title="Confirm update"
+        title="Confirm edit"
         message="Are you sure you want to save these changes to the snippet?"
         confirmLabel="Confirm"
         cancelLabel="Cancel"
