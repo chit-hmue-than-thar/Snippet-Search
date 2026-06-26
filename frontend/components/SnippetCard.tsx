@@ -2,13 +2,13 @@
 
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import {
   Box,
   Button,
   Card,
   CardContent,
   Chip,
-  Grid,
   Stack,
   Typography,
 } from "@mui/material";
@@ -21,52 +21,67 @@ export interface SnippetCardData {
   tags: string[];
 }
 
+function SectionLabel({ children }: { children: string }) {
+  return (
+    <Typography
+      variant="overline"
+      color="text.secondary"
+      display="block"
+      sx={{ letterSpacing: 1, mb: 0.5 }}
+    >
+      {children}
+    </Typography>
+  );
+}
+
 export default function SnippetCard({
   snippet,
+  onView,
   onEdit,
   onDelete,
 }: {
   snippet: SnippetCardData;
+  onView: (id: number) => void;
   onEdit: (id: number) => void;
   onDelete: (id: number) => void;
 }) {
   return (
-    <Card sx={{ height: "100%" }}>
-      <CardContent>
-        <Grid container spacing={2} alignItems="flex-start">
-          <Grid item xs={12} md={3}>
-            <Typography variant="overline" color="text.secondary" display="block">
-              Title
-            </Typography>
-            <Typography variant="subtitle1" fontWeight={700} color={appPalette.color4}>
+    <Card
+      variant="outlined"
+      sx={{
+        width: "100%",
+        borderColor: appPalette.color2,
+      }}
+    >
+      <CardContent sx={{ "&:last-child": { pb: 2 } }}>
+        <Stack spacing={2}>
+          <Box>
+            <SectionLabel>Title</SectionLabel>
+            <Typography
+              variant="subtitle1"
+              component="strong"
+              fontWeight={800}
+              color={appPalette.color4}
+              sx={{ wordBreak: "break-word" }}
+            >
               {snippet.title}
             </Typography>
-          </Grid>
+          </Box>
 
-          <Grid item xs={12} md={5}>
-            <Typography variant="overline" color="text.secondary" display="block">
-              Body
-            </Typography>
+          <Box>
+            <SectionLabel>Body</SectionLabel>
             <Typography
               variant="body2"
               color="text.secondary"
-              sx={{
-                display: "-webkit-box",
-                WebkitLineClamp: 4,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-                whiteSpace: "pre-wrap",
-              }}
+              sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
             >
               {snippet.body}
             </Typography>
-          </Grid>
+          </Box>
 
-          <Grid item xs={12} md={2}>
-            <Typography variant="overline" color="text.secondary" display="block" gutterBottom>
-              Tags
-            </Typography>
-            <Stack direction="row" flexWrap="wrap" gap={0.5} useFlexGap>
+          <Box>
+            <SectionLabel>Tags</SectionLabel>
+            <Stack direction="row" flexWrap="wrap" gap={0.75} useFlexGap>
               {snippet.tags.length > 0 ? (
                 snippet.tags.map((tag) => <Chip key={tag} label={tag} size="small" />)
               ) : (
@@ -75,19 +90,32 @@ export default function SnippetCard({
                 </Typography>
               )}
             </Stack>
-          </Grid>
+          </Box>
 
-          <Grid item xs={12} md={2}>
-            <Typography variant="overline" color="text.secondary" display="block" gutterBottom>
-              Actions
-            </Typography>
-            <Stack direction={{ xs: "row", md: "column" }} spacing={1}>
+          <Box>
+            <SectionLabel>Actions</SectionLabel>
+            <Stack
+              direction="row"
+              flexWrap="wrap"
+              gap={1}
+              useFlexGap
+              sx={{ width: "100%" }}
+            >
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<VisibilityOutlinedIcon />}
+                onClick={() => onView(snippet.id)}
+                sx={{ flex: { xs: "1 1 auto", sm: "0 1 auto" } }}
+              >
+                View
+              </Button>
               <Button
                 size="small"
                 variant="outlined"
                 startIcon={<EditOutlinedIcon />}
                 onClick={() => onEdit(snippet.id)}
-                fullWidth
+                sx={{ flex: { xs: "1 1 auto", sm: "0 1 auto" } }}
               >
                 Edit
               </Button>
@@ -97,13 +125,13 @@ export default function SnippetCard({
                 color="error"
                 startIcon={<DeleteOutlineIcon />}
                 onClick={() => onDelete(snippet.id)}
-                fullWidth
+                sx={{ flex: { xs: "1 1 auto", sm: "0 1 auto" } }}
               >
                 Delete
               </Button>
             </Stack>
-          </Grid>
-        </Grid>
+          </Box>
+        </Stack>
       </CardContent>
     </Card>
   );
