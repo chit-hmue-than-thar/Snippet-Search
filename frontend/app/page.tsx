@@ -18,29 +18,27 @@ import {
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, type KeyboardEvent } from "react";
-import ConfirmDialog from "@/components/ConfirmDialog";
-import SnippetCard, { type SnippetCardData } from "@/components/SnippetCard";
-import { deleteSnippet, listSnippets, searchSnippets } from "@/lib/api";
+import SnippetCard, { type SnippetResultData } from "@/components/SnippetCard";
+import { listSnippets, searchSnippets } from "@/lib/api";
 import { appPalette } from "@/theme/palette";
 
 const PAGE_SIZE = 10;
+const PREVIEW_MAX_LEN = 120;
 
-type DialogState =
-  | { type: "edit"; id: number; title: string }
-  | { type: "delete"; id: number; title: string }
-  | null;
+function makePreview(body: string): string {
+  if (body.length <= PREVIEW_MAX_LEN) return body;
+  return `${body.slice(0, PREVIEW_MAX_LEN).trimEnd()}...`;
+}
 
 export default function SearchPage() {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [activeQuery, setActiveQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [cards, setCards] = useState<SnippetCardData[]>([]);
+  const [results, setResults] = useState<SnippetResultData[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [dialog, setDialog] = useState<DialogState>(null);
-  const [actionLoading, setActionLoading] = useState(false);
 
   const isSearchMode = Boolean(activeQuery.trim());
 
@@ -50,22 +48,22 @@ export default function SearchPage() {
     try {
       if (q.trim()) {
         const data = await searchSnippets(q);
-        setCards(
+        setResults(
           data.results.map((item) => ({
             id: item.id,
             title: item.title,
-            body: item.body,
+            preview: item.preview,
             tags: item.tags,
           }))
         );
         setTotal(data.results.length);
       } else {
         const data = await listSnippets(pageNum, PAGE_SIZE);
-        setCards(
+        setResults(
           data.items.map((item) => ({
             id: item.id,
             title: item.title,
-            body: item.body,
+            preview: makePreview(item.body),
             tags: item.tags,
           }))
         );
@@ -73,7 +71,7 @@ export default function SearchPage() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load snippets");
-      setCards([]);
+      setResults([]);
       setTotal(0);
     } finally {
       setLoading(false);
@@ -100,50 +98,6 @@ export default function SearchPage() {
     }
   }
 
-  function handleViewClick(id: number) {
-    router.push(`/snippets/${id}`);
-  }
-
-  function handleEditClick(id: number) {
-    const snippet = cards.find((c) => c.id === id);
-    setDialog({
-      type: "edit",
-      id,
-      title: snippet?.title ?? "this snippet",
-    });
-  }
-
-  function handleDeleteClick(id: number) {
-    const snippet = cards.find((c) => c.id === id);
-    setDialog({
-      type: "delete",
-      id,
-      title: snippet?.title ?? "this snippet",
-    });
-  }
-
-  async function handleDialogConfirm() {
-    if (!dialog) return;
-
-    if (dialog.type === "edit") {
-      setDialog(null);
-      router.push(`/snippets/${dialog.id}/edit`);
-      return;
-    }
-
-    setActionLoading(true);
-    try {
-      await deleteSnippet(dialog.id);
-      setDialog(null);
-      await loadSnippets(activeQuery, page);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete snippet");
-      setDialog(null);
-    } finally {
-      setActionLoading(false);
-    }
-  }
-
   const pageCount = isSearchMode ? 1 : Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
@@ -165,9 +119,7 @@ export default function SearchPage() {
           sx={{
             bgcolor: "#fff",
             borderRadius: 1,
-            "& .MuiOutlinedInput-root": {
-              bgcolor: "#fff",
-            },
+            "& .MuiOutlinedInput-root": { bgcolor: "#fff" },
           }}
           InputProps={{
             startAdornment: (
@@ -210,7 +162,7 @@ export default function SearchPage() {
           spacing={2}
           sx={{ mb: 3 }}
         >
-          <Typography variant="h6">Snippets</Typography>
+          <Typography variant="h6">Results</Typography>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
@@ -241,7 +193,7 @@ export default function SearchPage() {
           </Alert>
         )}
 
-        {!loading && !error && cards.length === 0 && (
+        {!loading && !error && results.length === 0 && (
           <Typography color="text.secondary" textAlign="center" py={4}>
             {isSearchMode
               ? "No snippets match your search."
@@ -249,15 +201,13 @@ export default function SearchPage() {
           </Typography>
         )}
 
-        {!loading && !error && cards.length > 0 && (
+        {!loading && !error && results.length > 0 && (
           <Stack spacing={2}>
-            {cards.map((snippet) => (
+            {results.map((snippet) => (
               <SnippetCard
                 key={snippet.id}
                 snippet={snippet}
-                onView={handleViewClick}
-                onEdit={handleEditClick}
-                onDelete={handleDeleteClick}
+                onView={(id) => router.push(`/snippets/${id}`)}
               />
             ))}
           </Stack>
@@ -275,43 +225,6 @@ export default function SearchPage() {
           </Box>
         )}
       </Paper>
-
-      <ConfirmDialog
-        open={dialog?.type === "edit"}
-        title="Confirm edit"
-        message={`You are about to edit "${dialog?.type === "edit" ? dialog.title : ""}". Do you want to continue?`}
-        confirmLabel="Confirm"
-        cancelLabel="Cancel"
-        onConfirm={handleDialogConfirm}
-        onCancel={() => setDialog(null)}
-      />
-
-      <ConfirmDialog
-        open={dialog?.type === "delete"}
-        title="Confirm delete"
-        message={`Are you sure you want to delete "${dialog?.type === "delete" ? dialog.title : ""}"? This action cannot be undone.`}
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
-        confirmColor="error"
-        onConfirm={handleDialogConfirm}
-        onCancel={() => !actionLoading && setDialog(null)}
-      />
-
-      {actionLoading && (
-        <Box
-          sx={{
-            position: "fixed",
-            inset: 0,
-            bgcolor: "rgba(29, 45, 75, 0.2)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1400,
-          }}
-        >
-          <CircularProgress sx={{ color: appPalette.color3 }} />
-        </Box>
-      )}
     </Container>
   );
 }

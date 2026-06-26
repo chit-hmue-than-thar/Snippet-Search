@@ -157,7 +157,7 @@ export default function SnippetForm({
             required
             fullWidth
             error={Boolean(fieldErrors.title)}
-            helperText={fieldErrors.title ?? `String, max ${TITLE_MAX} characters`}
+            helperText={fieldErrors.title}
             inputProps={{ maxLength: TITLE_MAX }}
           />
           <TextField
@@ -172,7 +172,7 @@ export default function SnippetForm({
             multiline
             minRows={8}
             error={Boolean(fieldErrors.body)}
-            helperText={fieldErrors.body ?? "Text, required"}
+            helperText={fieldErrors.body}
           />
           <TextField
             label="Tags (comma-separated)"
@@ -184,7 +184,7 @@ export default function SnippetForm({
             fullWidth
             placeholder="contract, clause"
             error={Boolean(fieldErrors.tags)}
-            helperText={fieldErrors.tags ?? "List of strings, optional"}
+            helperText={fieldErrors.tags}
           />
           {info && <Alert severity="info">{info}</Alert>}
           {error && <Alert severity="error">{error}</Alert>}
