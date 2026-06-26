@@ -2,6 +2,7 @@
 
 import { Container, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
+import BackToSearch from "@/components/BackToSearch";
 import SnippetForm from "@/components/SnippetForm";
 import { createSnippet } from "@/lib/api";
 
@@ -10,11 +11,12 @@ export default function NewSnippetPage() {
 
   return (
     <Container maxWidth="md" sx={{ py: { xs: 2, md: 4 } }}>
+      <BackToSearch />
       <Typography variant="h4" gutterBottom>
         Create snippet
       </Typography>
       <SnippetForm
-        submitLabel="Create snippet"
+        submitLabel="Save"
         onSubmit={async (data) => {
           const snippet = await createSnippet(data);
           router.push(`/snippets/${snippet.id}`);

@@ -4,6 +4,7 @@ import { Button, Container, Typography } from "@mui/material";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import BackToSearch from "@/components/BackToSearch";
 import ErrorMessage from "@/components/ErrorMessage";
 import LoadingMessage from "@/components/LoadingMessage";
 import SnippetForm, { type SnippetFormValues } from "@/components/SnippetForm";
@@ -77,6 +78,7 @@ export default function EditSnippetPage() {
 
   return (
     <Container maxWidth="md" sx={{ py: { xs: 2, md: 4 } }}>
+      <BackToSearch />
       <Typography variant="h4" gutterBottom>
         Edit snippet
       </Typography>

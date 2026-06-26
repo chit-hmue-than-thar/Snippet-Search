@@ -13,6 +13,7 @@ import {
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import BackToSearch from "@/components/BackToSearch";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import ErrorMessage from "@/components/ErrorMessage";
 import LoadingMessage from "@/components/LoadingMessage";
@@ -101,6 +102,7 @@ export default function SnippetDetailPage() {
 
   return (
     <Container maxWidth="md" sx={{ py: { xs: 2, md: 4 } }}>
+      <BackToSearch />
       <Paper sx={{ p: 3, border: `1px solid ${appPalette.color2}` }}>
         <Typography variant="h4" gutterBottom>
           {snippet.title}
