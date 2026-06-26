@@ -27,6 +27,7 @@ export interface SnippetCreate {
 export interface SearchResult {
   id: number;
   title: string;
+  body: string;
   preview: string;
   tags: string[];
 }
@@ -39,6 +40,7 @@ export interface SearchResponse {
 export interface SnippetSummary {
   id: number;
   title: string;
+  body: string;
   tags: string[];
 }
 
@@ -63,7 +65,12 @@ async function handleResponse<T>(response: Response): Promise<T> {
     if (typeof body.detail === "string") {
       message = body.detail;
     } else if (Array.isArray(body.detail)) {
-      message = body.detail.map((e: { msg?: string }) => e.msg ?? "Validation error").join(", ");
+      message = body.detail
+        .map((e: { msg?: string; loc?: (string | number)[] }) => {
+          const field = e.loc?.filter((part) => typeof part === "string").pop();
+          return field ? `${field}: ${e.msg ?? "Validation error"}` : (e.msg ?? "Validation error");
+        })
+        .join("; ");
     }
   } catch {
     // keep default message
