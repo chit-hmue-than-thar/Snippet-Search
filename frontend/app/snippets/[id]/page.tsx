@@ -1,5 +1,7 @@
 "use client";
 
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import {
   Alert,
   Box,
@@ -29,6 +31,7 @@ export default function SnippetDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [showEditConfirm, setShowEditConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -104,7 +107,7 @@ export default function SnippetDetailPage() {
     <Container maxWidth="md" sx={{ py: { xs: 2, md: 4 } }}>
       <BackToSearch />
       <Paper sx={{ p: 3, border: `1px solid ${appPalette.color2}` }}>
-        <Typography variant="h4" gutterBottom>
+        <Typography variant="h4" gutterBottom fontWeight={700}>
           {snippet.title}
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -126,6 +129,7 @@ export default function SnippetDetailPage() {
             borderRadius: 2,
             whiteSpace: "pre-wrap",
             mb: 3,
+            wordBreak: "break-word",
           }}
         >
           {snippet.body}
@@ -138,17 +142,36 @@ export default function SnippetDetailPage() {
         )}
 
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-          <Button component={Link} href={`/snippets/${snippet.id}/edit`} variant="contained">
+          <Button
+            variant="contained"
+            startIcon={<EditOutlinedIcon />}
+            onClick={() => setShowEditConfirm(true)}
+          >
             Edit
           </Button>
-          <Button variant="outlined" color="error" onClick={() => setShowDeleteConfirm(true)}>
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<DeleteOutlineIcon />}
+            onClick={() => setShowDeleteConfirm(true)}
+          >
             Delete
-          </Button>
-          <Button component={Link} href="/" variant="text">
-            Back to search
           </Button>
         </Stack>
       </Paper>
+
+      <ConfirmDialog
+        open={showEditConfirm}
+        title="Confirm edit"
+        message={`You are about to edit "${snippet.title}". Do you want to continue?`}
+        confirmLabel="Confirm"
+        cancelLabel="Cancel"
+        onConfirm={() => {
+          setShowEditConfirm(false);
+          router.push(`/snippets/${snippet.id}/edit`);
+        }}
+        onCancel={() => setShowEditConfirm(false)}
+      />
 
       <ConfirmDialog
         open={showDeleteConfirm}
