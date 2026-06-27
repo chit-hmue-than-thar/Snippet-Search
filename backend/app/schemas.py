@@ -81,6 +81,7 @@ class SnippetResponse(BaseModel):
     body: str
     tags: list[str]
     created_at: datetime
+    updated_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 
@@ -90,6 +91,7 @@ class SnippetSummary(BaseModel):
     title: str
     body: str
     tags: list[str]
+    created_at: datetime
 
     model_config = {"from_attributes": True}
 
@@ -107,6 +109,7 @@ class SearchResultItem(BaseModel):
     body: str
     preview: str
     tags: list[str]
+    created_at: datetime
 
 
 class SearchResponse(BaseModel):
