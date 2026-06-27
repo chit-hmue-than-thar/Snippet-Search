@@ -17,13 +17,15 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import Link from "next/link";
 import { useState, type MouseEvent } from "react";
+import { editSnippetHref, snippetHref } from "@/lib/searchNav";
 import { appPalette } from "@/theme/palette";
 
 export interface SnippetResultData {
   id: number;
   title: string;
-  preview: string;
+  body: string;
   tags: string[];
   created_at: string;
 }
@@ -34,14 +36,12 @@ function formatDate(iso: string) {
 
 export default function SnippetCard({
   snippet,
-  onView,
-  onEdit,
+  navQuery,
   onDelete,
 }: {
   snippet: SnippetResultData;
-  onView: (id: number) => void;
-  onEdit: (id: number) => void;
-  onDelete: (id: number) => void;
+  navQuery: string | null;
+  onDelete: () => void;
 }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const menuOpen = Boolean(anchorEl);
@@ -53,11 +53,6 @@ export default function SnippetCard({
 
   function handleMenuClose() {
     setAnchorEl(null);
-  }
-
-  function handleAction(action: () => void) {
-    handleMenuClose();
-    action();
   }
 
   return (
@@ -102,19 +97,34 @@ export default function SnippetCard({
               anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
               transformOrigin={{ vertical: "top", horizontal: "right" }}
             >
-              <MenuItem onClick={() => handleAction(() => onView(snippet.id))}>
+              <MenuItem
+                component={Link}
+                href={snippetHref(snippet.id, navQuery)}
+                prefetch
+                onClick={handleMenuClose}
+              >
                 <ListItemIcon>
                   <VisibilityOutlinedIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>View</ListItemText>
               </MenuItem>
-              <MenuItem onClick={() => handleAction(() => onEdit(snippet.id))}>
+              <MenuItem
+                component={Link}
+                href={editSnippetHref(snippet.id, navQuery)}
+                prefetch
+                onClick={handleMenuClose}
+              >
                 <ListItemIcon>
                   <EditOutlinedIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>Edit</ListItemText>
               </MenuItem>
-              <MenuItem onClick={() => handleAction(() => onDelete(snippet.id))}>
+              <MenuItem
+                onClick={() => {
+                  handleMenuClose();
+                  onDelete();
+                }}
+              >
                 <ListItemIcon>
                   <DeleteOutlineIcon fontSize="small" color="error" />
                 </ListItemIcon>
@@ -130,9 +140,10 @@ export default function SnippetCard({
           <Typography
             variant="body2"
             color="text.secondary"
-            sx={{ wordBreak: "break-word" }}
+            component="div"
+            sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
           >
-            {snippet.preview}
+            {snippet.body}
           </Typography>
 
           <Stack direction="row" flexWrap="wrap" gap={0.75} useFlexGap>

@@ -93,8 +93,6 @@ class SnippetSummary(BaseModel):
     tags: list[str]
     created_at: datetime
 
-    model_config = {"from_attributes": True}
-
 
 class PaginatedSnippets(BaseModel):
     items: list[SnippetSummary]
@@ -107,7 +105,6 @@ class SearchResultItem(BaseModel):
     id: int
     title: str
     body: str
-    preview: str
     tags: list[str]
     created_at: datetime
 
