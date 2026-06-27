@@ -51,7 +51,6 @@ def update_snippet(db: Session, snippet: Snippet, snippet_in: SnippetUpdate) -> 
 
 def delete_snippet(db: Session, snippet: Snippet) -> None:
     snippet.delete_flag = True
-    snippet.updated_at = datetime.now(timezone.utc)
     db.commit()
 
 
