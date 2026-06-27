@@ -14,6 +14,7 @@
     "frontend:install": "npm install --prefix frontend",
     "frontend:dev": "npm run dev --prefix frontend",
     "frontend:build": "npm run build --prefix frontend",
+    "dev": "npm run frontend:dev",
     "setup": "npm run env:setup && npm run frontend:install && npm run docker:up && npm run docker:seed"
   }
 }

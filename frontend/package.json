@@ -14,9 +14,7 @@
     "docker:seed": "docker compose --project-directory .. exec api python seed.py",
     "docker:logs": "docker compose --project-directory .. logs -f api",
     "docker:status": "docker ps --filter name=snippetsearch",
-    "docker:health": "curl.exe -s http://localhost:8000/health",
-    "setup": "npm run env:setup && npm run docker:up && npm run docker:seed",
-    "stack:up": "npm run docker:up && npm run docker:seed"
+    "docker:health": "curl.exe -s http://localhost:8000/health"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",
