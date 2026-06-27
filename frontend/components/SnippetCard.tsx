@@ -102,7 +102,16 @@ export default function SnippetCard({
                 component={Link}
                 href={snippetHref(snippet.id, navState)}
                 prefetch
-                onClick={handleMenuClose}
+                onClick={() => {
+                  seedSnippetCache({
+                    id: snippet.id,
+                    title: snippet.title,
+                    body: snippet.body,
+                    tags: snippet.tags,
+                    created_at: snippet.created_at,
+                  });
+                  handleMenuClose();
+                }}
               >
                 <ListItemIcon>
                   <VisibilityOutlinedIcon fontSize="small" />
