@@ -1,16 +1,15 @@
 "use client";
 
 import {
-  Alert,
   Box,
   Button,
   CircularProgress,
   Stack,
   TextField,
 } from "@mui/material";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import type { SnippetCreate } from "@/lib/api";
+import { ApiError, type SnippetCreate } from "@/lib/api";
 import { appPalette } from "@/theme/palette";
 
 export interface SnippetFormValues {
@@ -20,7 +19,6 @@ export interface SnippetFormValues {
 }
 
 const TITLE_MAX = 200;
-const TAG_MAX = 100;
 
 function parseTags(raw: string): string[] {
   return raw
@@ -31,32 +29,6 @@ function parseTags(raw: string): string[] {
 
 function tagsEqual(a: string, b: string): boolean {
   return parseTags(a).join("\0") === parseTags(b).join("\0");
-}
-
-function validateForm(title: string, body: string, tags: string) {
-  const errors: { title?: string; body?: string; tags?: string } = {};
-
-  const trimmedTitle = title.trim();
-  if (!trimmedTitle) {
-    errors.title = "Title is required.";
-  } else if (trimmedTitle.length > TITLE_MAX) {
-    errors.title = `Title must be at most ${TITLE_MAX} characters.`;
-  }
-
-  const trimmedBody = body.trim();
-  if (!trimmedBody) {
-    errors.body = "Body is required.";
-  }
-
-  const tagList = parseTags(tags);
-  for (const tag of tagList) {
-    if (tag.length > TAG_MAX) {
-      errors.tags = `Each tag must be at most ${TAG_MAX} characters.`;
-      break;
-    }
-  }
-
-  return errors;
 }
 
 export default function SnippetForm({
@@ -82,12 +54,18 @@ export default function SnippetForm({
     body?: string;
     tags?: string;
   }>({});
-  const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [pendingData, setPendingData] = useState<SnippetCreate | null>(null);
+
+  useEffect(() => {
+    if (!initial) return;
+    setTitle(initial.title);
+    setBody(initial.body);
+    setTags(initial.tags);
+    setFieldErrors({});
+  }, [initial?.title, initial?.body, initial?.tags]);
 
   const hasChanges = useMemo(() => {
     if (!initial) return true;
@@ -98,14 +76,23 @@ export default function SnippetForm({
     );
   }, [initial, title, body, tags]);
 
+  function buildPayload(): SnippetCreate {
+    return {
+      title: title.trim(),
+      body: body.trim(),
+      tags: parseTags(tags),
+    };
+  }
+
   async function save(data: SnippetCreate) {
-    setError(null);
-    setInfo(null);
+    setFieldErrors({});
     setSubmitting(true);
     try {
       await onSubmit(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save snippet");
+      if (err instanceof ApiError && err.status === 422 && err.fieldErrors) {
+        setFieldErrors(err.fieldErrors);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -113,22 +100,13 @@ export default function SnippetForm({
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setInfo(null);
-
-    const errors = validateForm(title, body, tags);
-    setFieldErrors(errors);
-    if (Object.keys(errors).length > 0) return;
-
-    const data: SnippetCreate = {
-      title: title.trim(),
-      body: body.trim(),
-      tags: parseTags(tags),
-    };
+    setFieldErrors({});
 
     if (requireUpdateConfirm && initial && !hasChanges) {
-      setInfo("No changes to update. Modify title, body, or tags before saving.");
       return;
     }
+
+    const data = buildPayload();
 
     if (requireUpdateConfirm) {
       setPendingData(data);
@@ -151,6 +129,7 @@ export default function SnippetForm({
     <>
       <Box
         component="form"
+        noValidate
         onSubmit={handleSubmit}
         sx={{
           width: "100%",
@@ -170,7 +149,6 @@ export default function SnippetForm({
               setTitle(e.target.value);
               setFieldErrors((prev) => ({ ...prev, title: undefined }));
             }}
-            required
             fullWidth
             error={Boolean(fieldErrors.title)}
             helperText={fieldErrors.title}
@@ -186,7 +164,6 @@ export default function SnippetForm({
               setBody(e.target.value);
               setFieldErrors((prev) => ({ ...prev, body: undefined }));
             }}
-            required
             fullWidth
             multiline
             minRows={8}
@@ -209,8 +186,6 @@ export default function SnippetForm({
             helperText={fieldErrors.tags}
             autoComplete="off"
           />
-          {info && <Alert severity="info">{info}</Alert>}
-          {error && <Alert severity="error">{error}</Alert>}
           <Stack direction="row" spacing={1} useFlexGap>
             {showCancel && (
               <Button
@@ -223,7 +198,14 @@ export default function SnippetForm({
                 Cancel
               </Button>
             )}
-            <Button type="submit" variant="contained" disabled={submitting}>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={
+                submitting ||
+                Boolean(requireUpdateConfirm && initial && !hasChanges)
+              }
+            >
               {submitting ? <CircularProgress size={22} color="inherit" /> : submitLabel}
             </Button>
           </Stack>
