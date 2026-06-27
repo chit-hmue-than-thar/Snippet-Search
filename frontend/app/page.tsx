@@ -1,7 +1,6 @@
 "use client";
 
 import AddIcon from "@mui/icons-material/Add";
-import RefreshIcon from "@mui/icons-material/Refresh";
 import SearchIcon from "@mui/icons-material/Search";
 import {
   Alert,
@@ -14,16 +13,22 @@ import {
   Paper,
   Stack,
   TextField,
-  Typography,
 } from "@mui/material";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState, type KeyboardEvent } from "react";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import SnippetCard, { type SnippetResultData } from "@/components/SnippetCard";
-import { listSnippets, searchSnippets } from "@/lib/api";
+import { deleteSnippet, listSnippets, searchSnippets } from "@/lib/api";
+import { editSnippetHref, snippetHref } from "@/lib/searchNav";
 import { appPalette } from "@/theme/palette";
 
 const PAGE_SIZE = 10;
 const PREVIEW_MAX_LEN = 120;
+
+const toolbarButtonSx = {
+  flexShrink: 0,
+  whiteSpace: "nowrap",
+};
 
 function makePreview(body: string): string {
   if (body.length <= PREVIEW_MAX_LEN) return body;
@@ -32,15 +37,27 @@ function makePreview(body: string): string {
 
 export default function SearchPage() {
   const router = useRouter();
-  const [query, setQuery] = useState("");
-  const [activeQuery, setActiveQuery] = useState("");
+  const searchParams = useSearchParams();
+  const urlQuery = searchParams.get("q") ?? "";
+
+  const [query, setQuery] = useState(urlQuery);
+  const [activeQuery, setActiveQuery] = useState(urlQuery);
   const [page, setPage] = useState(1);
   const [results, setResults] = useState<SnippetResultData[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<SnippetResultData | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const isSearchMode = Boolean(activeQuery.trim());
+
+  useEffect(() => {
+    const q = searchParams.get("q") ?? "";
+    setQuery(q);
+    setActiveQuery(q);
+    setPage(1);
+  }, [searchParams]);
 
   const loadSnippets = useCallback(async (q: string, pageNum: number) => {
     setLoading(true);
@@ -54,6 +71,7 @@ export default function SearchPage() {
             title: item.title,
             preview: item.preview,
             tags: item.tags,
+            created_at: item.created_at,
           }))
         );
         setTotal(data.results.length);
@@ -65,6 +83,7 @@ export default function SearchPage() {
             title: item.title,
             preview: makePreview(item.body),
             tags: item.tags,
+            created_at: item.created_at,
           }))
         );
         setTotal(data.total);
@@ -83,12 +102,10 @@ export default function SearchPage() {
   }, [activeQuery, page, loadSnippets]);
 
   function handleSearch() {
+    const trimmed = query.trim();
     setPage(1);
-    setActiveQuery(query.trim());
-  }
-
-  function handleRefresh() {
-    loadSnippets(activeQuery, page);
+    setActiveQuery(trimmed);
+    router.replace(trimmed ? `/?q=${encodeURIComponent(trimmed)}` : "/");
   }
 
   function handleSearchKeyDown(e: KeyboardEvent) {
@@ -98,24 +115,46 @@ export default function SearchPage() {
     }
   }
 
+  async function handleDeleteConfirm() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteSnippet(deleteTarget.id);
+      setDeleteTarget(null);
+      await loadSnippets(activeQuery, page);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete snippet");
+      setDeleteTarget(null);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   const pageCount = isSearchMode ? 1 : Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const navQuery = activeQuery.trim() || null;
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
       <Stack
         direction={{ xs: "column", sm: "row" }}
         spacing={1}
-        alignItems={{ xs: "stretch", sm: "flex-start" }}
+        alignItems={{ xs: "stretch", sm: "center" }}
         sx={{ mb: 3 }}
       >
         <TextField
-          id="search"
+          id="snippet-search-input"
+          name="snippet-query"
           fullWidth
           placeholder="Search snippets by keyword…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleSearchKeyDown}
-          inputProps={{ id: "snippet-search-input" }}
+          autoComplete="off"
+          inputProps={{
+            autoComplete: "off",
+            "data-lpignore": "true",
+            "data-form-type": "other",
+          }}
           sx={{
             bgcolor: "#fff",
             borderRadius: 1,
@@ -133,17 +172,9 @@ export default function SearchPage() {
           variant="contained"
           startIcon={<SearchIcon />}
           onClick={handleSearch}
-          sx={{ minWidth: { xs: "100%", sm: 120 }, height: 56 }}
+          sx={toolbarButtonSx}
         >
           Search
-        </Button>
-        <Button
-          variant="outlined"
-          startIcon={<RefreshIcon />}
-          onClick={handleRefresh}
-          sx={{ minWidth: { xs: "100%", sm: 120 }, height: 56 }}
-        >
-          Refresh
         </Button>
       </Stack>
 
@@ -155,23 +186,16 @@ export default function SearchPage() {
           border: `1px solid ${appPalette.color2}`,
         }}
       >
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          justifyContent="space-between"
-          alignItems={{ xs: "stretch", sm: "center" }}
-          spacing={2}
-          sx={{ mb: 3 }}
-        >
-          <Typography variant="h6">Results</Typography>
+        <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 3 }}>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => router.push("/snippets/new")}
-            sx={{ alignSelf: { xs: "stretch", sm: "flex-end" } }}
+            sx={toolbarButtonSx}
           >
             Add snippet
           </Button>
-        </Stack>
+        </Box>
 
         {loading && (
           <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
@@ -183,7 +207,7 @@ export default function SearchPage() {
           <Alert
             severity="error"
             action={
-              <Button color="inherit" size="small" onClick={handleRefresh}>
+              <Button color="inherit" size="small" onClick={() => loadSnippets(activeQuery, page)}>
                 Retry
               </Button>
             }
@@ -194,11 +218,11 @@ export default function SearchPage() {
         )}
 
         {!loading && !error && results.length === 0 && (
-          <Typography color="text.secondary" textAlign="center" py={4}>
+          <Box color="text.secondary" textAlign="center" py={4} component="p">
             {isSearchMode
               ? "No snippets match your search."
               : "No snippets yet. Click Add snippet to create one."}
-          </Typography>
+          </Box>
         )}
 
         {!loading && !error && results.length > 0 && (
@@ -207,7 +231,9 @@ export default function SearchPage() {
               <SnippetCard
                 key={snippet.id}
                 snippet={snippet}
-                onView={(id) => router.push(`/snippets/${id}`)}
+                onView={(id) => router.push(snippetHref(id, navQuery))}
+                onEdit={(id) => router.push(editSnippetHref(id, navQuery))}
+                onDelete={() => setDeleteTarget(snippet)}
               />
             ))}
           </Stack>
@@ -225,6 +251,17 @@ export default function SearchPage() {
           </Box>
         )}
       </Paper>
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="Confirm delete"
+        message={`Are you sure you want to delete "${deleteTarget?.title ?? ""}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        confirmColor="error"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => !deleting && setDeleteTarget(null)}
+      />
     </Container>
   );
 }

@@ -16,6 +16,7 @@ export interface Snippet {
   body: string;
   tags: string[];
   created_at: string;
+  updated_at: string | null;
 }
 
 export interface SnippetCreate {
@@ -30,6 +31,7 @@ export interface SearchResult {
   body: string;
   preview: string;
   tags: string[];
+  created_at: string;
 }
 
 export interface SearchResponse {
@@ -42,6 +44,7 @@ export interface SnippetSummary {
   title: string;
   body: string;
   tags: string[];
+  created_at: string;
 }
 
 export interface PaginatedSnippets {
