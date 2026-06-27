@@ -1,19 +1,20 @@
 "use client";
 
-import { Button, Container, Typography } from "@mui/material";
-import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { Container, Typography } from "@mui/material";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import BackToSearch from "@/components/BackToSearch";
 import ErrorMessage from "@/components/ErrorMessage";
 import LoadingMessage from "@/components/LoadingMessage";
 import SnippetForm, { type SnippetFormValues } from "@/components/SnippetForm";
 import { ApiError, getSnippet, updateSnippet } from "@/lib/api";
+import { dashboardHref } from "@/lib/searchNav";
 
 export default function EditSnippetPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const id = Number(params.id);
+  const returnHref = dashboardHref(searchParams.get("q"));
 
   const [initial, setInitial] = useState<SnippetFormValues | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,20 +56,17 @@ export default function EditSnippetPage() {
 
   if (notFound) {
     return (
-      <Container maxWidth="md" sx={{ py: 4, textAlign: "center" }}>
+      <Container maxWidth="lg" sx={{ py: 4, textAlign: "center" }}>
         <Typography color="text.secondary" gutterBottom>
           Snippet not found.
         </Typography>
-        <Button component={Link} href="/" variant="outlined">
-          Back to search
-        </Button>
       </Container>
     );
   }
 
   if (error) {
     return (
-      <Container maxWidth="md" sx={{ py: 4 }}>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
         <ErrorMessage message={error} onRetry={load} />
       </Container>
     );
@@ -77,18 +75,19 @@ export default function EditSnippetPage() {
   if (!initial) return null;
 
   return (
-    <Container maxWidth="md" sx={{ py: { xs: 2, md: 4 } }}>
-      <BackToSearch />
+    <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
       <Typography variant="h4" gutterBottom>
         Edit snippet
       </Typography>
       <SnippetForm
         initial={initial}
-        submitLabel="Save changes"
+        submitLabel="Confirm"
+        showCancel
         requireUpdateConfirm
+        onCancel={() => router.push(returnHref)}
         onSubmit={async (data) => {
-          const snippet = await updateSnippet(id, data);
-          router.push(`/snippets/${snippet.id}`);
+          await updateSnippet(id, data);
+          router.push(returnHref);
         }}
       />
     </Container>

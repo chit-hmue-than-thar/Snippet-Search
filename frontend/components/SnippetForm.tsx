@@ -63,11 +63,15 @@ export default function SnippetForm({
   initial,
   submitLabel,
   onSubmit,
+  onCancel,
+  showCancel = false,
   requireUpdateConfirm = false,
 }: {
   initial?: SnippetFormValues;
   submitLabel: string;
   onSubmit: (data: SnippetCreate) => Promise<void>;
+  onCancel?: () => void;
+  showCancel?: boolean;
   requireUpdateConfirm?: boolean;
 }) {
   const [title, setTitle] = useState(initial?.title ?? "");
@@ -81,7 +85,8 @@ export default function SnippetForm({
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [pendingData, setPendingData] = useState<SnippetCreate | null>(null);
 
   const hasChanges = useMemo(() => {
@@ -127,11 +132,19 @@ export default function SnippetForm({
 
     if (requireUpdateConfirm) {
       setPendingData(data);
-      setShowConfirm(true);
+      setShowSaveConfirm(true);
       return;
     }
 
     void save(data);
+  }
+
+  function handleCancelClick() {
+    if (initial && hasChanges) {
+      setShowDiscardConfirm(true);
+      return;
+    }
+    onCancel?.();
   }
 
   return (
@@ -140,6 +153,7 @@ export default function SnippetForm({
         component="form"
         onSubmit={handleSubmit}
         sx={{
+          width: "100%",
           p: 3,
           bgcolor: "background.paper",
           borderRadius: 2,
@@ -148,6 +162,8 @@ export default function SnippetForm({
       >
         <Stack spacing={2.5}>
           <TextField
+            id="snippet-title"
+            name="title"
             label="Title"
             value={title}
             onChange={(e) => {
@@ -159,8 +175,11 @@ export default function SnippetForm({
             error={Boolean(fieldErrors.title)}
             helperText={fieldErrors.title}
             inputProps={{ maxLength: TITLE_MAX }}
+            autoComplete="off"
           />
           <TextField
+            id="snippet-body"
+            name="body"
             label="Body"
             value={body}
             onChange={(e) => {
@@ -173,8 +192,11 @@ export default function SnippetForm({
             minRows={8}
             error={Boolean(fieldErrors.body)}
             helperText={fieldErrors.body}
+            autoComplete="off"
           />
           <TextField
+            id="snippet-tags"
+            name="tags"
             label="Tags (comma-separated)"
             value={tags}
             onChange={(e) => {
@@ -185,39 +207,57 @@ export default function SnippetForm({
             placeholder="contract, clause"
             error={Boolean(fieldErrors.tags)}
             helperText={fieldErrors.tags}
+            autoComplete="off"
           />
           {info && <Alert severity="info">{info}</Alert>}
           {error && <Alert severity="error">{error}</Alert>}
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={submitting}
-            sx={{
-              alignSelf: "flex-start",
-              minWidth: 150,
-              height: 40,
-              px: 3,
-            }}
-          >
-            {submitting ? <CircularProgress size={22} color="inherit" /> : submitLabel}
-          </Button>
+          <Stack direction="row" spacing={1} useFlexGap>
+            {showCancel && (
+              <Button
+                type="button"
+                variant="outlined"
+                color="inherit"
+                disabled={submitting}
+                onClick={handleCancelClick}
+              >
+                Cancel
+              </Button>
+            )}
+            <Button type="submit" variant="contained" disabled={submitting}>
+              {submitting ? <CircularProgress size={22} color="inherit" /> : submitLabel}
+            </Button>
+          </Stack>
         </Stack>
       </Box>
 
       <ConfirmDialog
-        open={showConfirm}
-        title="Confirm edit"
+        open={showSaveConfirm}
+        title="Confirm update"
         message="Are you sure you want to save these changes to the snippet?"
         confirmLabel="Confirm"
         cancelLabel="Cancel"
         onConfirm={() => {
-          setShowConfirm(false);
+          setShowSaveConfirm(false);
           if (pendingData) void save(pendingData);
         }}
         onCancel={() => {
-          setShowConfirm(false);
+          setShowSaveConfirm(false);
           setPendingData(null);
         }}
+      />
+
+      <ConfirmDialog
+        open={showDiscardConfirm}
+        title="Discard changes"
+        message="You have unsaved changes. Are you sure you want to discard them?"
+        confirmLabel="Discard"
+        cancelLabel="Keep editing"
+        confirmColor="error"
+        onConfirm={() => {
+          setShowDiscardConfirm(false);
+          onCancel?.();
+        }}
+        onCancel={() => setShowDiscardConfirm(false)}
       />
     </>
   );

@@ -18,8 +18,8 @@ export default function NewSnippetPage() {
       <SnippetForm
         submitLabel="Save"
         onSubmit={async (data) => {
-          const snippet = await createSnippet(data);
-          router.push(`/snippets/${snippet.id}`);
+          await createSnippet(data);
+          router.push("/");
         }}
       />
     </Container>

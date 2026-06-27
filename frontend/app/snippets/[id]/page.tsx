@@ -1,9 +1,6 @@
 "use client";
 
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import {
-  Alert,
   Box,
   Button,
   Chip,
@@ -13,27 +10,22 @@ import {
   Typography,
 } from "@mui/material";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import BackToSearch from "@/components/BackToSearch";
-import ConfirmDialog from "@/components/ConfirmDialog";
 import ErrorMessage from "@/components/ErrorMessage";
 import LoadingMessage from "@/components/LoadingMessage";
-import { ApiError, deleteSnippet, getSnippet, type Snippet } from "@/lib/api";
+import { ApiError, getSnippet, type Snippet } from "@/lib/api";
 import { appPalette } from "@/theme/palette";
 
 export default function SnippetDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const id = Number(params.id);
 
   const [snippet, setSnippet] = useState<Snippet | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
-  const [showEditConfirm, setShowEditConfirm] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     if (Number.isNaN(id)) {
@@ -64,20 +56,6 @@ export default function SnippetDetailPage() {
     load();
   }, [load]);
 
-  async function handleDeleteConfirm() {
-    if (!snippet) return;
-    setDeleting(true);
-    try {
-      await deleteSnippet(snippet.id);
-      router.push("/");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete snippet");
-      setShowDeleteConfirm(false);
-    } finally {
-      setDeleting(false);
-    }
-  }
-
   if (loading) return <LoadingMessage />;
 
   if (notFound) {
@@ -104,14 +82,11 @@ export default function SnippetDetailPage() {
   if (!snippet) return null;
 
   return (
-    <Container maxWidth="md" sx={{ py: { xs: 2, md: 4 } }}>
+    <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
       <BackToSearch />
-      <Paper sx={{ p: 3, border: `1px solid ${appPalette.color2}` }}>
-        <Typography variant="h4" gutterBottom fontWeight={700}>
+      <Paper sx={{ p: 3, border: `1px solid ${appPalette.color2}`, width: "100%" }}>
+        <Typography variant="h4" gutterBottom fontWeight={700} sx={{ wordBreak: "break-word" }}>
           {snippet.title}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Created {new Date(snippet.created_at).toLocaleString()}
         </Typography>
 
         {snippet.tags.length > 0 && (
@@ -124,65 +99,17 @@ export default function SnippetDetailPage() {
 
         <Box
           sx={{
+            width: "100%",
             p: 2,
             bgcolor: appPalette.color1,
             borderRadius: 2,
             whiteSpace: "pre-wrap",
-            mb: 3,
             wordBreak: "break-word",
           }}
         >
           {snippet.body}
         </Box>
-
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-          <Button
-            variant="contained"
-            startIcon={<EditOutlinedIcon />}
-            onClick={() => setShowEditConfirm(true)}
-          >
-            Edit
-          </Button>
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<DeleteOutlineIcon />}
-            onClick={() => setShowDeleteConfirm(true)}
-          >
-            Delete
-          </Button>
-        </Stack>
       </Paper>
-
-      <ConfirmDialog
-        open={showEditConfirm}
-        title="Confirm edit"
-        message={`You are about to edit "${snippet.title}". Do you want to continue?`}
-        confirmLabel="Confirm"
-        cancelLabel="Cancel"
-        onConfirm={() => {
-          setShowEditConfirm(false);
-          router.push(`/snippets/${snippet.id}/edit`);
-        }}
-        onCancel={() => setShowEditConfirm(false)}
-      />
-
-      <ConfirmDialog
-        open={showDeleteConfirm}
-        title="Confirm delete"
-        message={`Are you sure you want to delete "${snippet.title}"? This action cannot be undone.`}
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
-        confirmColor="error"
-        onConfirm={handleDeleteConfirm}
-        onCancel={() => !deleting && setShowDeleteConfirm(false)}
-      />
     </Container>
   );
 }
