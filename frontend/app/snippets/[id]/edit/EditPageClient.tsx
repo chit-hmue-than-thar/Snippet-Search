@@ -1,0 +1,71 @@
+"use client";
+
+import { Button, Container, Typography } from "@mui/material";
+import Link from "next/link";
+import { useParams, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import EditSnippetForm from "@/components/EditSnippetForm";
+import LoadingMessage from "@/components/LoadingMessage";
+import { ApiError, getSnippet } from "@/lib/api";
+import type { SnippetFormValues } from "@/components/SnippetForm";
+
+export default function EditPageClient() {
+  const params = useParams();
+  const searchParams = useSearchParams();
+  const id = Number(params.id);
+  const returnQuery = searchParams.get("q");
+
+  const [initial, setInitial] = useState<SnippetFormValues | null>(null);
+  const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    if (Number.isNaN(id)) return;
+
+    let cancelled = false;
+    getSnippet(id)
+      .then((snippet) => {
+        if (cancelled) return;
+        setInitial({
+          title: snippet.title,
+          body: snippet.body,
+          tags: snippet.tags.join(", "),
+        });
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        if (err instanceof ApiError && err.status === 404) {
+          setNotFound(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  if (Number.isNaN(id) || notFound) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 4, textAlign: "center" }}>
+        <Typography color="text.secondary" gutterBottom>
+          Snippet not found.
+        </Typography>
+        <Button component={Link} href="/" variant="outlined" sx={{ mt: 2 }}>
+          Back to search
+        </Button>
+      </Container>
+    );
+  }
+
+  if (!initial) {
+    return <LoadingMessage />;
+  }
+
+  return (
+    <EditSnippetForm
+      key={`${id}-${initial.title}`}
+      id={id}
+      returnQuery={returnQuery}
+      initial={initial}
+    />
+  );
+}
