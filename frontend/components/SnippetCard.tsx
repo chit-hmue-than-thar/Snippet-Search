@@ -20,6 +20,7 @@ import {
 import Link from "next/link";
 import { useState, type MouseEvent } from "react";
 import { editSnippetHref, snippetHref } from "@/lib/searchNav";
+import { seedSnippetCache } from "@/lib/api";
 import { appPalette } from "@/theme/palette";
 
 export interface SnippetResultData {
@@ -112,7 +113,16 @@ export default function SnippetCard({
                 component={Link}
                 href={editSnippetHref(snippet.id, navQuery)}
                 prefetch
-                onClick={handleMenuClose}
+                onClick={() => {
+                  seedSnippetCache({
+                    id: snippet.id,
+                    title: snippet.title,
+                    body: snippet.body,
+                    tags: snippet.tags,
+                    created_at: snippet.created_at,
+                  });
+                  handleMenuClose();
+                }}
               >
                 <ListItemIcon>
                   <EditOutlinedIcon fontSize="small" />

@@ -1,15 +1,21 @@
+import { mapApiValidationErrors } from "./snippetValidation";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const CACHE_TTL_MS = 15_000;
 const cache = new Map<string, { at: number; data: unknown }>();
 
 export class ApiError extends Error {
+  fieldErrors?: Record<string, string>;
+
   constructor(
     message: string,
-    public status: number
+    public status: number,
+    fieldErrors?: Record<string, string>
   ) {
     super(message);
     this.name = "ApiError";
+    this.fieldErrors = fieldErrors;
   }
 }
 
@@ -88,11 +94,16 @@ async function handleResponse<T>(response: Response): Promise<T> {
   }
 
   let message = `Request failed with status ${response.status}`;
+  let fieldErrors: Record<string, string> | undefined;
   try {
     const body = await response.json();
     if (typeof body.detail === "string") {
       message = body.detail;
     } else if (Array.isArray(body.detail)) {
+      const mapped = mapApiValidationErrors(body.detail);
+      if (Object.keys(mapped).length > 0) {
+        fieldErrors = mapped;
+      }
       message = body.detail
         .map((e: { msg?: string; loc?: (string | number)[] }) => {
           const field = e.loc?.filter((part) => typeof part === "string").pop();
@@ -103,7 +114,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
   } catch {
     // keep default message
   }
-  throw new ApiError(message, response.status);
+  throw new ApiError(message, response.status, fieldErrors);
 }
 
 async function cachedFetch<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
@@ -132,6 +143,20 @@ export async function listSnippets(page = 1, limit = 50): Promise<PaginatedSnipp
   return cachedFetch(key, async () => {
     const response = await fetch(`${API_URL}/snippets?${params}`);
     return handleResponse<PaginatedSnippets>(response);
+  });
+}
+
+export function seedSnippetCache(snippet: {
+  id: number;
+  title: string;
+  body: string;
+  tags: string[];
+  created_at: string;
+  updated_at?: string | null;
+}) {
+  writeCache(`/snippets/${snippet.id}`, {
+    ...snippet,
+    updated_at: snippet.updated_at ?? null,
   });
 }
 
