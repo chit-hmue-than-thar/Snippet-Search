@@ -20,6 +20,7 @@ import {
 import Link from "next/link";
 import { useState, type MouseEvent } from "react";
 import { editSnippetHref, snippetHref } from "@/lib/searchNav";
+import { makePreview } from "@/lib/preview";
 import { seedSnippetCache } from "@/lib/api";
 import { appPalette } from "@/theme/palette";
 
@@ -31,19 +32,18 @@ export interface SnippetResultData {
   created_at: string;
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleString();
-}
-
 export default function SnippetCard({
   snippet,
   navQuery,
+  navPage,
   onDelete,
 }: {
   snippet: SnippetResultData;
   navQuery: string | null;
+  navPage: number;
   onDelete: () => void;
 }) {
+  const navState = { query: navQuery, page: navPage };
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const menuOpen = Boolean(anchorEl);
 
@@ -100,7 +100,7 @@ export default function SnippetCard({
             >
               <MenuItem
                 component={Link}
-                href={snippetHref(snippet.id, navQuery)}
+                href={snippetHref(snippet.id, navState)}
                 prefetch
                 onClick={handleMenuClose}
               >
@@ -111,7 +111,7 @@ export default function SnippetCard({
               </MenuItem>
               <MenuItem
                 component={Link}
-                href={editSnippetHref(snippet.id, navQuery)}
+                href={editSnippetHref(snippet.id, navState)}
                 prefetch
                 onClick={() => {
                   seedSnippetCache({
@@ -143,17 +143,13 @@ export default function SnippetCard({
             </Menu>
           </Box>
 
-          <Typography variant="caption" color="text.secondary">
-            Created {formatDate(snippet.created_at)}
-          </Typography>
-
           <Typography
             variant="body2"
             color="text.secondary"
             component="div"
             sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
           >
-            {snippet.body}
+            {makePreview(snippet.body)}
           </Typography>
 
           <Stack direction="row" flexWrap="wrap" gap={0.75} useFlexGap>
