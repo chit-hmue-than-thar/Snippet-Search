@@ -1,95 +1,45 @@
-"use client";
+import { Button, Container, Typography } from "@mui/material";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import EditSnippetForm from "@/components/EditSnippetForm";
+import { fetchSnippetServer } from "@/lib/api-server";
 
-import { Container, Typography } from "@mui/material";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
-import ErrorMessage from "@/components/ErrorMessage";
-import LoadingMessage from "@/components/LoadingMessage";
-import SnippetForm, { type SnippetFormValues } from "@/components/SnippetForm";
-import { ApiError, getSnippet, updateSnippet } from "@/lib/api";
-import { dashboardHref } from "@/lib/searchNav";
+export default async function EditSnippetPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { id: idParam } = await params;
+  const { q } = await searchParams;
+  const id = Number(idParam);
 
-export default function EditSnippetPage() {
-  const params = useParams();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const id = Number(params.id);
-  const returnHref = dashboardHref(searchParams.get("q"));
-
-  const [initial, setInitial] = useState<SnippetFormValues | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [notFound, setNotFound] = useState(false);
-
-  const load = useCallback(async () => {
-    if (Number.isNaN(id)) {
-      setNotFound(true);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    try {
-      const snippet = await getSnippet(id);
-      setInitial({
-        title: snippet.title,
-        body: snippet.body,
-        tags: snippet.tags.join(", "),
-      });
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 404) {
-        setNotFound(true);
-      } else {
-        setError(err instanceof Error ? err.message : "Failed to load snippet");
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  if (loading) return <LoadingMessage />;
-
-  if (notFound) {
+  if (Number.isNaN(id)) {
     return (
       <Container maxWidth="lg" sx={{ py: 4, textAlign: "center" }}>
         <Typography color="text.secondary" gutterBottom>
           Snippet not found.
         </Typography>
+        <Button component={Link} href="/" variant="outlined">
+          Back to search
+        </Button>
       </Container>
     );
   }
 
-  if (error) {
-    return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <ErrorMessage message={error} onRetry={load} />
-      </Container>
-    );
-  }
-
-  if (!initial) return null;
+  const snippet = await fetchSnippetServer(id);
+  if (!snippet) notFound();
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
-      <Typography variant="h4" gutterBottom>
-        Edit snippet
-      </Typography>
-      <SnippetForm
-        initial={initial}
-        submitLabel="Confirm"
-        showCancel
-        requireUpdateConfirm
-        onCancel={() => router.push(returnHref)}
-        onSubmit={async (data) => {
-          await updateSnippet(id, data);
-          router.push(returnHref);
-        }}
-      />
-    </Container>
+    <EditSnippetForm
+      id={id}
+      returnQuery={q ?? null}
+      initial={{
+        title: snippet.title,
+        body: snippet.body,
+        tags: snippet.tags.join(", "),
+      }}
+    />
   );
 }

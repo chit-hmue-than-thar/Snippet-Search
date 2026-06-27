@@ -22,7 +22,6 @@ def search_snippets(
                 id=snippet.id,
                 title=snippet.title,
                 body=snippet.body,
-                preview=crud.make_preview(snippet.body),
                 tags=snippet.tags or [],
                 created_at=snippet.created_at,
             )

@@ -6,15 +6,7 @@ from sqlalchemy.orm import Session
 from app.models import Snippet
 from app.schemas import SnippetCreate, SnippetUpdate
 
-PREVIEW_MAX_LEN = 120
-
 _ACTIVE = Snippet.delete_flag.is_(False)
-
-
-def make_preview(body: str, max_len: int = PREVIEW_MAX_LEN) -> str:
-    if len(body) <= max_len:
-        return body
-    return body[:max_len].rstrip() + "..."
 
 
 def get_snippet(db: Session, snippet_id: int) -> Snippet | None:

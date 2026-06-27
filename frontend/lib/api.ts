@@ -1,5 +1,8 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+const CACHE_TTL_MS = 15_000;
+const cache = new Map<string, { at: number; data: unknown }>();
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -29,7 +32,6 @@ export interface SearchResult {
   id: number;
   title: string;
   body: string;
-  preview: string;
   tags: string[];
   created_at: string;
 }
@@ -52,6 +54,29 @@ export interface PaginatedSnippets {
   page: number;
   limit: number;
   total: number;
+}
+
+function cacheKey(path: string) {
+  return path;
+}
+
+function readCache<T>(key: string): T | null {
+  const hit = cache.get(key);
+  if (!hit || Date.now() - hit.at > CACHE_TTL_MS) {
+    cache.delete(key);
+    return null;
+  }
+  return hit.data as T;
+}
+
+function writeCache(key: string, data: unknown) {
+  cache.set(key, { at: Date.now(), data });
+}
+
+export function invalidateSnippetCache() {
+  for (const key of cache.keys()) {
+    cache.delete(key);
+  }
 }
 
 async function handleResponse<T>(response: Response): Promise<T> {
@@ -81,10 +106,21 @@ async function handleResponse<T>(response: Response): Promise<T> {
   throw new ApiError(message, response.status);
 }
 
+async function cachedFetch<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
+  const cached = readCache<T>(key);
+  if (cached) return cached;
+  const data = await fetcher();
+  writeCache(key, data);
+  return data;
+}
+
 export async function searchSnippets(q: string): Promise<SearchResponse> {
   const params = new URLSearchParams({ q });
-  const response = await fetch(`${API_URL}/search?${params}`);
-  return handleResponse<SearchResponse>(response);
+  const key = cacheKey(`/search?${params}`);
+  return cachedFetch(key, async () => {
+    const response = await fetch(`${API_URL}/search?${params}`);
+    return handleResponse<SearchResponse>(response);
+  });
 }
 
 export async function listSnippets(page = 1, limit = 50): Promise<PaginatedSnippets> {
@@ -92,13 +128,19 @@ export async function listSnippets(page = 1, limit = 50): Promise<PaginatedSnipp
     page: String(page),
     limit: String(limit),
   });
-  const response = await fetch(`${API_URL}/snippets?${params}`);
-  return handleResponse<PaginatedSnippets>(response);
+  const key = cacheKey(`/snippets?${params}`);
+  return cachedFetch(key, async () => {
+    const response = await fetch(`${API_URL}/snippets?${params}`);
+    return handleResponse<PaginatedSnippets>(response);
+  });
 }
 
 export async function getSnippet(id: number): Promise<Snippet> {
-  const response = await fetch(`${API_URL}/snippets/${id}`);
-  return handleResponse<Snippet>(response);
+  const key = cacheKey(`/snippets/${id}`);
+  return cachedFetch(key, async () => {
+    const response = await fetch(`${API_URL}/snippets/${id}`);
+    return handleResponse<Snippet>(response);
+  });
 }
 
 export async function createSnippet(data: SnippetCreate): Promise<Snippet> {
@@ -107,7 +149,9 @@ export async function createSnippet(data: SnippetCreate): Promise<Snippet> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  return handleResponse<Snippet>(response);
+  const snippet = await handleResponse<Snippet>(response);
+  invalidateSnippetCache();
+  return snippet;
 }
 
 export async function updateSnippet(id: number, data: SnippetCreate): Promise<Snippet> {
@@ -116,12 +160,15 @@ export async function updateSnippet(id: number, data: SnippetCreate): Promise<Sn
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  return handleResponse<Snippet>(response);
+  const snippet = await handleResponse<Snippet>(response);
+  invalidateSnippetCache();
+  return snippet;
 }
 
 export async function deleteSnippet(id: number): Promise<void> {
   const response = await fetch(`${API_URL}/snippets/${id}`, {
     method: "DELETE",
   });
-  return handleResponse<void>(response);
+  await handleResponse<void>(response);
+  invalidateSnippetCache();
 }

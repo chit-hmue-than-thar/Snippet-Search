@@ -34,7 +34,16 @@ def list_snippets(
 ):
     items, total = crud.list_snippets(db, page=page, limit=limit)
     return PaginatedSnippets(
-        items=[SnippetSummary.model_validate(item) for item in items],
+        items=[
+            SnippetSummary(
+                id=item.id,
+                title=item.title,
+                body=item.body,
+                tags=item.tags or [],
+                created_at=item.created_at,
+            )
+            for item in items
+        ],
         page=page,
         limit=limit,
         total=total,
