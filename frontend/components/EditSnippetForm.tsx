@@ -33,6 +33,7 @@ export default function EditSnippetForm({
         onCancel={() => router.push(returnHref)}
         onSubmit={async (data) => {
           await updateSnippet(id, data);
+          router.refresh();
           router.push(returnHref);
         }}
       />

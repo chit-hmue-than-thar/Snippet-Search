@@ -16,11 +16,11 @@ import {
   TextField,
 } from "@mui/material";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import SnippetCard, { type SnippetResultData } from "@/components/SnippetCard";
-import { deleteSnippet, listSnippets, searchSnippets } from "@/lib/api";
+import { deleteSnippet, listSnippets, searchSnippets, seedSnippetCache } from "@/lib/api";
 import { appPalette } from "@/theme/palette";
 
 const PAGE_SIZE = 10;
@@ -32,6 +32,7 @@ const toolbarButtonSx = {
 
 export default function SearchPageClient() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const urlQuery = searchParams.get("q") ?? "";
   const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
@@ -45,6 +46,7 @@ export default function SearchPageClient() {
   const [deleteTarget, setDeleteTarget] = useState<SnippetResultData | null>(null);
   const [deleting, setDeleting] = useState(false);
   const hasLoadedOnce = useRef(false);
+  const prevPathname = useRef(pathname);
 
   const isSearchMode = Boolean(urlQuery.trim());
   const navQuery = urlQuery.trim() || null;
@@ -65,10 +67,16 @@ export default function SearchPageClient() {
     try {
       if (q.trim()) {
         const data = await searchSnippets(q);
+        for (const snippet of data.results) {
+          seedSnippetCache(snippet);
+        }
         setResults(data.results);
         setTotal(data.results.length);
       } else {
         const data = await listSnippets(pageNum, PAGE_SIZE);
+        for (const snippet of data.items) {
+          seedSnippetCache(snippet);
+        }
         setResults(data.items);
         setTotal(data.total);
       }
@@ -88,6 +96,13 @@ export default function SearchPageClient() {
   useEffect(() => {
     loadSnippets(urlQuery, page);
   }, [urlQuery, page, loadSnippets]);
+
+  useEffect(() => {
+    if (pathname === "/" && prevPathname.current !== pathname) {
+      loadSnippets(urlQuery, page);
+    }
+    prevPathname.current = pathname;
+  }, [pathname, urlQuery, page, loadSnippets]);
 
   function handleSearch() {
     const trimmed = query.trim();

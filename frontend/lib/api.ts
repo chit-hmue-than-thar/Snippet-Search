@@ -160,6 +160,10 @@ export function seedSnippetCache(snippet: {
   });
 }
 
+export function peekSnippetCache(id: number): Snippet | null {
+  return readCache<Snippet>(`/snippets/${id}`);
+}
+
 export async function getSnippet(id: number): Promise<Snippet> {
   const key = cacheKey(`/snippets/${id}`);
   return cachedFetch(key, async () => {

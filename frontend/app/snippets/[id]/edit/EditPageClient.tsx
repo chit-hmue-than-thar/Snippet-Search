@@ -6,9 +6,17 @@ import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import EditSnippetForm from "@/components/EditSnippetForm";
 import LoadingMessage from "@/components/LoadingMessage";
-import { ApiError, getSnippet } from "@/lib/api";
+import { ApiError, getSnippet, peekSnippetCache, type Snippet } from "@/lib/api";
 import type { SnippetFormValues } from "@/components/SnippetForm";
 import { parseReturnPage } from "@/lib/searchNav";
+
+function snippetToFormValues(snippet: Snippet): SnippetFormValues {
+  return {
+    title: snippet.title,
+    body: snippet.body,
+    tags: snippet.tags.join(", "),
+  };
+}
 
 export default function EditPageClient() {
   const params = useParams();
@@ -17,7 +25,11 @@ export default function EditPageClient() {
   const returnQuery = searchParams.get("q");
   const returnPage = parseReturnPage(searchParams.get("page"));
 
-  const [initial, setInitial] = useState<SnippetFormValues | null>(null);
+  const [initial, setInitial] = useState<SnippetFormValues | null>(() => {
+    if (Number.isNaN(id)) return null;
+    const cached = peekSnippetCache(id);
+    return cached ? snippetToFormValues(cached) : null;
+  });
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
@@ -27,11 +39,7 @@ export default function EditPageClient() {
     getSnippet(id)
       .then((snippet) => {
         if (cancelled) return;
-        setInitial({
-          title: snippet.title,
-          body: snippet.body,
-          tags: snippet.tags.join(", "),
-        });
+        setInitial(snippetToFormValues(snippet));
       })
       .catch((err) => {
         if (cancelled) return;

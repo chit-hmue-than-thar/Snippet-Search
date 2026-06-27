@@ -6,7 +6,7 @@ export async function fetchSnippetServer(id: number): Promise<Snippet | null> {
   if (Number.isNaN(id)) return null;
 
   const response = await fetch(`${API_URL}/snippets/${id}`, {
-    next: { revalidate: 30 },
+    cache: "no-store",
   });
 
   if (response.status === 404) return null;
