@@ -8,6 +8,7 @@
     "docker:down": "docker compose down",
     "docker:reset": "docker compose down -v",
     "docker:seed": "docker compose exec api python seed.py",
+    "docker:psql": "docker compose exec db psql -U postgres -d snippet_search",
     "docker:logs": "docker compose logs -f api",
     "docker:status": "docker ps --filter name=snippetsearch",
     "docker:health": "curl.exe -s http://localhost:8000/health",
