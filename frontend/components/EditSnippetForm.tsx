@@ -10,13 +10,15 @@ export default function EditSnippetForm({
   id,
   initial,
   returnQuery,
+  returnPage,
 }: {
   id: number;
   initial: SnippetFormValues;
   returnQuery: string | null;
+  returnPage: number;
 }) {
   const router = useRouter();
-  const returnHref = dashboardHref(returnQuery);
+  const returnHref = dashboardHref({ query: returnQuery, page: returnPage });
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>

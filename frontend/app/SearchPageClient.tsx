@@ -238,6 +238,7 @@ export default function SearchPageClient() {
                 key={snippet.id}
                 snippet={snippet}
                 navQuery={navQuery}
+                navPage={page}
                 onDelete={() => setDeleteTarget(snippet)}
               />
             ))}

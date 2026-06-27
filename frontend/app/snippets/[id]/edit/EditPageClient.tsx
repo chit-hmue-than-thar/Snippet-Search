@@ -8,12 +8,14 @@ import EditSnippetForm from "@/components/EditSnippetForm";
 import LoadingMessage from "@/components/LoadingMessage";
 import { ApiError, getSnippet } from "@/lib/api";
 import type { SnippetFormValues } from "@/components/SnippetForm";
+import { parseReturnPage } from "@/lib/searchNav";
 
 export default function EditPageClient() {
   const params = useParams();
   const searchParams = useSearchParams();
   const id = Number(params.id);
   const returnQuery = searchParams.get("q");
+  const returnPage = parseReturnPage(searchParams.get("page"));
 
   const [initial, setInitial] = useState<SnippetFormValues | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -65,6 +67,7 @@ export default function EditPageClient() {
       key={`${id}-${initial.title}`}
       id={id}
       returnQuery={returnQuery}
+      returnPage={returnPage}
       initial={initial}
     />
   );
