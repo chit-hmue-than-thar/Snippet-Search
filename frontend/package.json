@@ -12,6 +12,7 @@
     "docker:down": "docker compose --project-directory .. down",
     "docker:reset": "docker compose --project-directory .. down -v",
     "docker:seed": "docker compose --project-directory .. exec api python seed.py",
+    "docker:psql": "docker compose --project-directory .. exec db psql -U postgres -d snippet_search",
     "docker:logs": "docker compose --project-directory .. logs -f api",
     "docker:status": "docker ps --filter name=snippetsearch",
     "docker:health": "curl.exe -s http://localhost:8000/health"
