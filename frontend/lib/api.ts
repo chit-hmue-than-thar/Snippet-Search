@@ -58,6 +58,15 @@ export interface PaginatedSnippets {
   total: number;
 }
 
+/** Normalize list/search items from API (handles legacy `preview` field). */
+function normalizeSnippetListItem(item: SnippetListItem & { preview?: string }): SnippetListItem {
+  return {
+    ...item,
+    body: item.body ?? item.preview ?? "",
+    tags: item.tags ?? [],
+  };
+}
+
 function cacheKey(path: string) {
   return path;
 }
@@ -139,7 +148,13 @@ export async function searchSnippets(q: string): Promise<SearchResponse> {
   const key = cacheKey(`/search?${params}`);
   return cachedFetch(key, async () => {
     const response = await fetch(`${API_URL}/search?${params}`);
-    return handleResponse<SearchResponse>(response);
+    const data = await handleResponse<SearchResponse & { results: (SnippetListItem & { preview?: string })[] }>(
+      response
+    );
+    return {
+      ...data,
+      results: data.results.map(normalizeSnippetListItem),
+    };
   });
 }
 
@@ -151,7 +166,13 @@ export async function listSnippets(page = 1, limit = 50): Promise<PaginatedSnipp
   const key = cacheKey(`/snippets?${params}`);
   return cachedFetch(key, async () => {
     const response = await fetch(`${API_URL}/snippets?${params}`);
-    return handleResponse<PaginatedSnippets>(response);
+    const data = await handleResponse<PaginatedSnippets & { items: (SnippetListItem & { preview?: string })[] }>(
+      response
+    );
+    return {
+      ...data,
+      items: data.items.map(normalizeSnippetListItem),
+    };
   });
 }
 
