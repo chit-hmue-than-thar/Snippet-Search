@@ -18,30 +18,22 @@ import {
   Typography,
 } from "@mui/material";
 import Link from "next/link";
-import { useState, type MouseEvent } from "react";
+import { memo, useState, type MouseEvent } from "react";
 import { editSnippetHref, snippetHref } from "@/lib/searchNav";
 import { makePreview } from "@/lib/preview";
-import { seedSnippetCache } from "@/lib/api";
+import type { SnippetListItem } from "@/lib/api";
 import { appPalette } from "@/theme/palette";
 
-export interface SnippetResultData {
-  id: number;
-  title: string;
-  body: string;
-  tags: string[];
-  created_at: string;
-}
-
-export default function SnippetCard({
+function SnippetCard({
   snippet,
   navQuery,
   navPage,
   onDelete,
 }: {
-  snippet: SnippetResultData;
+  snippet: SnippetListItem;
   navQuery: string | null;
   navPage: number;
-  onDelete: () => void;
+  onDelete: (id: number) => void;
 }) {
   const navState = { query: navQuery, page: navPage };
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -102,16 +94,7 @@ export default function SnippetCard({
                 component={Link}
                 href={snippetHref(snippet.id, navState)}
                 prefetch
-                onClick={() => {
-                  seedSnippetCache({
-                    id: snippet.id,
-                    title: snippet.title,
-                    body: snippet.body,
-                    tags: snippet.tags,
-                    created_at: snippet.created_at,
-                  });
-                  handleMenuClose();
-                }}
+                onClick={handleMenuClose}
               >
                 <ListItemIcon>
                   <VisibilityOutlinedIcon fontSize="small" />
@@ -122,16 +105,7 @@ export default function SnippetCard({
                 component={Link}
                 href={editSnippetHref(snippet.id, navState)}
                 prefetch
-                onClick={() => {
-                  seedSnippetCache({
-                    id: snippet.id,
-                    title: snippet.title,
-                    body: snippet.body,
-                    tags: snippet.tags,
-                    created_at: snippet.created_at,
-                  });
-                  handleMenuClose();
-                }}
+                onClick={handleMenuClose}
               >
                 <ListItemIcon>
                   <EditOutlinedIcon fontSize="small" />
@@ -141,7 +115,7 @@ export default function SnippetCard({
               <MenuItem
                 onClick={() => {
                   handleMenuClose();
-                  onDelete();
+                  onDelete(snippet.id);
                 }}
               >
                 <ListItemIcon>
@@ -175,3 +149,5 @@ export default function SnippetCard({
     </Card>
   );
 }
+
+export default memo(SnippetCard);

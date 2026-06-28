@@ -1,26 +1,30 @@
 "use client";
 
 import AddIcon from "@mui/icons-material/Add";
-import SearchIcon from "@mui/icons-material/Search";
 import {
-  Alert,
   Box,
   Button,
   CircularProgress,
   Container,
-  InputAdornment,
   LinearProgress,
   Pagination,
   Paper,
   Stack,
-  TextField,
 } from "@mui/material";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import SnippetCard, { type SnippetResultData } from "@/components/SnippetCard";
-import { deleteSnippet, listSnippets, searchSnippets, seedSnippetCache } from "@/lib/api";
+import ErrorMessage from "@/components/ErrorMessage";
+import SearchToolbar from "@/components/SearchToolbar";
+import SnippetResultsList from "@/components/SnippetResultsList";
+import {
+  deleteSnippet,
+  listSnippets,
+  searchSnippets,
+  seedSnippetCache,
+  type SnippetListItem,
+} from "@/lib/api";
 import { appPalette } from "@/theme/palette";
 
 const PAGE_SIZE = 10;
@@ -37,23 +41,19 @@ export default function SearchPageClient() {
   const urlQuery = searchParams.get("q") ?? "";
   const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
 
-  const [query, setQuery] = useState(urlQuery);
-  const [results, setResults] = useState<SnippetResultData[]>([]);
+  const [results, setResults] = useState<SnippetListItem[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<SnippetResultData | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<SnippetListItem | null>(null);
   const [deleting, setDeleting] = useState(false);
   const hasLoadedOnce = useRef(false);
-  const prevPathname = useRef(pathname);
+  const resultsRef = useRef(results);
+  resultsRef.current = results;
 
   const isSearchMode = Boolean(urlQuery.trim());
   const navQuery = urlQuery.trim() || null;
-
-  useEffect(() => {
-    setQuery(urlQuery);
-  }, [urlQuery]);
 
   const loadSnippets = useCallback(async (q: string, pageNum: number) => {
     const isBackground = hasLoadedOnce.current;
@@ -94,35 +94,32 @@ export default function SearchPageClient() {
   }, []);
 
   useEffect(() => {
+    if (pathname !== "/") return;
     loadSnippets(urlQuery, page);
-  }, [urlQuery, page, loadSnippets]);
-
-  useEffect(() => {
-    if (pathname === "/" && prevPathname.current !== pathname) {
-      loadSnippets(urlQuery, page);
-    }
-    prevPathname.current = pathname;
   }, [pathname, urlQuery, page, loadSnippets]);
 
-  function handleSearch() {
-    const trimmed = query.trim();
-    router.replace(trimmed ? `/?q=${encodeURIComponent(trimmed)}` : "/");
-  }
+  const handleSearch = useCallback(
+    (query: string) => {
+      router.replace(query ? `/?q=${encodeURIComponent(query)}` : "/");
+    },
+    [router]
+  );
 
-  function handleSearchKeyDown(e: KeyboardEvent) {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleSearch();
-    }
-  }
+  const handlePageChange = useCallback(
+    (_: unknown, value: number) => {
+      const params = new URLSearchParams();
+      if (urlQuery.trim()) params.set("q", urlQuery.trim());
+      if (value > 1) params.set("page", String(value));
+      const qs = params.toString();
+      router.replace(qs ? `/?${qs}` : "/");
+    },
+    [router, urlQuery]
+  );
 
-  function handlePageChange(_: unknown, value: number) {
-    const params = new URLSearchParams();
-    if (urlQuery.trim()) params.set("q", urlQuery.trim());
-    if (value > 1) params.set("page", String(value));
-    const qs = params.toString();
-    router.replace(qs ? `/?${qs}` : "/");
-  }
+  const handleDeleteRequest = useCallback((id: number) => {
+    const target = resultsRef.current.find((snippet) => snippet.id === id);
+    if (target) setDeleteTarget(target);
+  }, []);
 
   async function handleDeleteConfirm() {
     if (!deleteTarget) return;
@@ -147,48 +144,7 @@ export default function SearchPageClient() {
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={1}
-        alignItems={{ xs: "stretch", sm: "center" }}
-        sx={{ mb: 3 }}
-      >
-        <TextField
-          id="snippet-search-input"
-          name="snippet-query"
-          fullWidth
-          placeholder="Search snippets by keyword…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={handleSearchKeyDown}
-          autoComplete="off"
-          inputProps={{
-            autoComplete: "off",
-            "data-lpignore": "true",
-            "data-form-type": "other",
-          }}
-          sx={{
-            bgcolor: "#fff",
-            borderRadius: 1,
-            "& .MuiOutlinedInput-root": { bgcolor: "#fff" },
-          }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ color: appPalette.color3 }} />
-              </InputAdornment>
-            ),
-          }}
-        />
-        <Button
-          variant="contained"
-          startIcon={<SearchIcon />}
-          onClick={handleSearch}
-          sx={toolbarButtonSx}
-        >
-          Search
-        </Button>
-      </Stack>
+      <SearchToolbar urlQuery={urlQuery} onSearch={handleSearch} />
 
       <Paper
         elevation={0}
@@ -225,17 +181,9 @@ export default function SearchPageClient() {
         )}
 
         {!showInitialLoader && error && (
-          <Alert
-            severity="error"
-            action={
-              <Button color="inherit" size="small" onClick={() => loadSnippets(urlQuery, page)}>
-                Retry
-              </Button>
-            }
-            sx={{ mb: 2 }}
-          >
-            {error}
-          </Alert>
+          <Box sx={{ mb: 2 }}>
+            <ErrorMessage message={error} onRetry={() => loadSnippets(urlQuery, page)} />
+          </Box>
         )}
 
         {!showInitialLoader && !error && results.length === 0 && (
@@ -247,17 +195,12 @@ export default function SearchPageClient() {
         )}
 
         {!showInitialLoader && !error && results.length > 0 && (
-          <Stack spacing={2}>
-            {results.map((snippet) => (
-              <SnippetCard
-                key={snippet.id}
-                snippet={snippet}
-                navQuery={navQuery}
-                navPage={page}
-                onDelete={() => setDeleteTarget(snippet)}
-              />
-            ))}
-          </Stack>
+          <SnippetResultsList
+            results={results}
+            navQuery={navQuery}
+            navPage={page}
+            onDeleteRequest={handleDeleteRequest}
+          />
         )}
 
         {!showInitialLoader && !error && !isSearchMode && total > PAGE_SIZE && (
