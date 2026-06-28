@@ -34,7 +34,7 @@ npm run setup
 
 This will:
 
-1. Create `frontend/.env.local` from the example file
+1. Run first-time frontend configuration
 2. Install frontend dependencies
 3. Build and start Docker containers (PostgreSQL + API)
 4. Seed the database with 25 sample snippets (skipped if data already exists)
@@ -97,16 +97,10 @@ npm run docker:reset     # stop containers and wipe database volume
 
 ### 2. Frontend (Next.js on host)
 
-**Step 1.** Create the environment file:
+**Step 1.** Run first-time configuration:
 
 ```powershell
 npm run env:setup
-```
-
-Or manually:
-
-```powershell
-copy frontend\.env.local.example frontend\.env.local
 ```
 
 **Step 2.** Install dependencies:
@@ -429,34 +423,6 @@ Same request body as create. All fields are required.
 
 ---
 
-## Environment variables
-
-### Backend (`backend/.env`)
-
-Used when running the API outside Docker:
-
-```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/snippet_search
-CORS_ORIGINS=http://localhost:3000
-```
-
-Docker Compose sets these automatically for the container.
-
-### Frontend (`frontend/.env.local`)
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8000
-NEXT_DISABLE_DEVTOOLS=1
-```
-
-Copy from `frontend/.env.local.example`:
-
-```powershell
-npm run env:setup
-```
-
----
-
 ## Alternative — backend without Docker
 
 Requires local PostgreSQL 17+.
@@ -464,7 +430,6 @@ Requires local PostgreSQL 17+.
 ```powershell
 createdb snippet_search
 cd backend
-copy .env.example .env
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -509,7 +474,7 @@ python seed.py
 
 | Script | Description |
 |--------|-------------|
-| `npm run setup` | Full first-time setup (env, install, docker, seed) |
+| `npm run setup` | Full first-time setup (config, install, docker, seed) |
 | `npm run dev` | Start Next.js dev server |
 | `npm run docker:up` | Build and start Docker containers |
 | `npm run docker:down` | Stop Docker containers |
@@ -545,8 +510,8 @@ npm run docker:seed
 **Frontend cannot reach the API**
 
 1. Confirm the API is running: `npm run docker:health`
-2. Check `frontend/.env.local` has `NEXT_PUBLIC_API_URL=http://localhost:8000`
-3. Restart the Next.js dev server after changing env vars
+2. Run `npm run env:setup` from the project root if you have not configured the frontend yet
+3. Restart the Next.js dev server after changing local configuration
 
 **Port already in use**
 

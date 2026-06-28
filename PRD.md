@@ -49,7 +49,7 @@ Users need a simple app to **save short text entries (snippets)** with a title, 
 
 ### Submission
 
-- `README.md` — setup and run instructions (Docker Compose as primary path) + sample `.env`
+- `README.md` — setup and run instructions (Docker Compose as primary path)
 - `NOTES.md` — decisions, AI usage, future improvements
 - Git history with small, meaningful commits
 - Zip or Drive link to `hello@etverdict.com` before **Sunday 28 June 2026, 16:00 CEST**

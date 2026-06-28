@@ -31,7 +31,7 @@ Backend structure is inspired by the official **[full-stack-fastapi-template](ht
 | `backend/app/models.py` | SQLAlchemy `Snippet` model |
 | `backend/app/schemas.py` | Pydantic request/response models |
 | `backend/app/crud.py` | Database operations |
-| `backend/app/core/config.py` | Settings from `.env` |
+| `backend/app/core/config.py` | Application settings (pydantic-settings) |
 | `backend/app/api/deps.py` | `get_db` dependency |
 | React frontend | **Next.js App Router** (per challenge requirement) |
 | Auth, users, Alembic | **Omitted** — out of scope for v1 |
@@ -56,7 +56,7 @@ snippet-search/
 │   │   ├── main.py              # FastAPI app, CORS, router registration
 │   │   ├── core/
 │   │   │   ├── __init__.py
-│   │   │   └── config.py        # pydantic-settings: DATABASE_URL, CORS_ORIGINS
+│   │   │   └── config.py        # pydantic-settings application config
 │   │   ├── database.py          # engine, SessionLocal, get_db, create_tables
 │   │   ├── models.py            # SQLAlchemy Snippet
 │   │   ├── schemas.py           # Pydantic SnippetCreate, SnippetUpdate, responses
@@ -68,8 +68,7 @@ snippet-search/
 │   │       └── health.py        # /health
 │   ├── seed.py                  # load 25 snippets from seed_data.json
 │   ├── seed_data.json           # copied from INTERN_GUIDELINE.md
-│   ├── requirements.txt
-│   └── .env.example
+│   └── requirements.txt
 └── frontend/
     ├── app/
     │   ├── layout.tsx             # root layout, header nav
@@ -94,8 +93,7 @@ snippet-search/
     ├── lib/
     │   └── api.ts                 # typed fetch wrappers
     ├── package.json
-    ├── tsconfig.json
-    └── .env.local.example
+    └── tsconfig.json
 ```
 
 ---
@@ -200,20 +198,7 @@ Only pursue after v1 works and tests pass.
 
 ## 6. Backend configuration
 
-### Environment variables
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `DATABASE_URL` | yes | — | `postgresql://user:password@localhost:5432/snippet_search` |
-| `CORS_ORIGINS` | no | `http://localhost:3000` | Comma-separated allowed origins |
-| `API_PREFIX` | no | `""` | Route prefix if needed |
-
-### `.env.example`
-
-```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/snippet_search
-CORS_ORIGINS=http://localhost:3000
-```
+Settings are loaded via `pydantic-settings` in `backend/app/core/config.py`. Docker Compose supplies database and CORS configuration for the API container.
 
 ### Dependencies (`requirements.txt`)
 
@@ -276,7 +261,7 @@ app.add_middleware(
 ### API client (`lib/api.ts`)
 
 ```typescript
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_URL = "http://localhost:8000"; // overridable via local frontend config
 
 export async function searchSnippets(q: string): Promise<SearchResponse> { ... }
 export async function getSnippet(id: number): Promise<Snippet> { ... }
@@ -286,13 +271,6 @@ export async function deleteSnippet(id: number): Promise<void> { ... }
 ```
 
 All functions throw on non-OK responses so components can catch and show `ErrorMessage`.
-
-### Environment
-
-```env
-# .env.local
-NEXT_PUBLIC_API_URL=http://localhost:8000
-```
 
 ---
 
@@ -381,9 +359,6 @@ services:
     build: ./backend
     ports:
       - "8000:8000"
-    environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/snippet_search
-      CORS_ORIGINS: http://localhost:3000
     depends_on:
       - db
 
@@ -402,7 +377,7 @@ docker compose exec api python seed.py
 
 # 3. Frontend (on host)
 cd frontend
-cp .env.local.example .env.local   # NEXT_PUBLIC_API_URL=http://localhost:8000
+npm run env:setup
 npm install
 npm run dev
 ```
@@ -420,7 +395,6 @@ If you prefer a native Python environment, install PostgreSQL 17 locally:
 ```bash
 createdb snippet_search
 cd backend
-cp .env.example .env
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 python seed.py
