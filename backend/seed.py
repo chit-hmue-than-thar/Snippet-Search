@@ -15,7 +15,14 @@ def main() -> None:
     create_tables()
     db = SessionLocal()
     try:
-        existing = db.scalar(select(func.count()).select_from(Snippet)) or 0
+        existing = (
+            db.scalar(
+                select(func.count())
+                .select_from(Snippet)
+                .where(Snippet.delete_flag.is_(False))
+            )
+            or 0
+        )
         if existing > 0:
             print(f"Skipped seeding — {existing} snippet(s) already in database.")
             return

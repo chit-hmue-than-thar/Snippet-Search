@@ -34,26 +34,22 @@ export interface SnippetCreate {
   tags: string[];
 }
 
-export interface SearchResult {
+export interface SnippetListItem {
   id: number;
   title: string;
   body: string;
   tags: string[];
   created_at: string;
 }
+
+export type SearchResult = SnippetListItem;
 
 export interface SearchResponse {
   query: string;
   results: SearchResult[];
 }
 
-export interface SnippetSummary {
-  id: number;
-  title: string;
-  body: string;
-  tags: string[];
-  created_at: string;
-}
+export type SnippetSummary = SnippetListItem;
 
 export interface PaginatedSnippets {
   items: SnippetSummary[];
@@ -79,10 +75,23 @@ function writeCache(key: string, data: unknown) {
   cache.set(key, { at: Date.now(), data });
 }
 
-export function invalidateSnippetCache() {
+function invalidateListAndSearchCaches() {
   for (const key of cache.keys()) {
-    cache.delete(key);
+    if (key.startsWith("/snippets?") || key.startsWith("/search?")) {
+      cache.delete(key);
+    }
   }
+}
+
+export function invalidateSnippetCache(options?: { snippetId?: number }) {
+  if (!options) {
+    cache.clear();
+    return;
+  }
+  if (options.snippetId !== undefined) {
+    cache.delete(`/snippets/${options.snippetId}`);
+  }
+  invalidateListAndSearchCaches();
 }
 
 async function handleResponse<T>(response: Response): Promise<T> {
@@ -146,14 +155,7 @@ export async function listSnippets(page = 1, limit = 50): Promise<PaginatedSnipp
   });
 }
 
-export function seedSnippetCache(snippet: {
-  id: number;
-  title: string;
-  body: string;
-  tags: string[];
-  created_at: string;
-  updated_at?: string | null;
-}) {
+export function seedSnippetCache(snippet: SnippetListItem & { updated_at?: string | null }) {
   writeCache(`/snippets/${snippet.id}`, {
     ...snippet,
     updated_at: snippet.updated_at ?? null,
@@ -179,7 +181,7 @@ export async function createSnippet(data: SnippetCreate): Promise<Snippet> {
     body: JSON.stringify(data),
   });
   const snippet = await handleResponse<Snippet>(response);
-  invalidateSnippetCache();
+  invalidateListAndSearchCaches();
   return snippet;
 }
 
@@ -190,7 +192,8 @@ export async function updateSnippet(id: number, data: SnippetCreate): Promise<Sn
     body: JSON.stringify(data),
   });
   const snippet = await handleResponse<Snippet>(response);
-  invalidateSnippetCache();
+  writeCache(`/snippets/${id}`, snippet);
+  invalidateListAndSearchCaches();
   return snippet;
 }
 
@@ -199,5 +202,5 @@ export async function deleteSnippet(id: number): Promise<void> {
     method: "DELETE",
   });
   await handleResponse<void>(response);
-  invalidateSnippetCache();
+  invalidateSnippetCache({ snippetId: id });
 }
