@@ -10,6 +10,7 @@ export function useSnippet(id: number) {
     validId ? peekSnippetCache(id) : null
   );
   const [notFound, setNotFound] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(() => validId && !peekSnippetCache(id));
 
   useEffect(() => {
@@ -19,22 +20,29 @@ export function useSnippet(id: number) {
     if (cached) {
       setSnippet(cached);
       setLoading(false);
+      setError(null);
       return;
     }
 
     let cancelled = false;
     setLoading(true);
+    setError(null);
 
     getSnippet(id)
       .then((loaded) => {
         if (cancelled) return;
         setSnippet(loaded);
         setNotFound(false);
+        setError(null);
       })
       .catch((err) => {
         if (cancelled) return;
         if (err instanceof ApiError && err.status === 404) {
           setNotFound(true);
+          setSnippet(null);
+          setError(null);
+        } else {
+          setError(err instanceof Error ? err.message : "Failed to load snippet");
           setSnippet(null);
         }
       })
@@ -51,5 +59,6 @@ export function useSnippet(id: number) {
     snippet,
     notFound: !validId || notFound,
     loading,
+    error,
   };
 }
