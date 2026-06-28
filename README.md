@@ -34,10 +34,11 @@ npm run setup
 
 This will:
 
-1. Run first-time frontend configuration
-2. Install frontend dependencies
-3. Build and start Docker containers (PostgreSQL + API)
-4. Seed the database with 25 sample snippets (skipped if data already exists)
+1. Install frontend dependencies
+2. Build and start Docker containers (PostgreSQL + API)
+3. Seed the database with 25 sample snippets (skipped if data already exists)
+
+Create `frontend/.env.local` first — see [Local configuration](#local-configuration).
 
 Then start the frontend:
 
@@ -54,6 +55,37 @@ Open **http://localhost:3000**
 Deploy the frontend to **Vercel** and the API + database to **Render**. Full step-by-step guide:
 
 **[DEPLOYMENT.md](DEPLOYMENT.md)**
+
+---
+
+## Local configuration
+
+Environment files are **gitignored** — create them locally. Replace `USER`, `PASSWORD`, `HOST`, and `DATABASE_NAME` with your own values. **Do not commit real credentials.**
+
+### `backend/.env` (non-Docker only)
+
+Skip this file when using **Docker Compose** — the API is configured in `docker-compose.yml`.
+
+```env
+DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DATABASE_NAME
+CORS_ORIGINS=http://localhost:3000
+```
+
+### `frontend/.env.local` (required for dev server)
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_DISABLE_DEVTOOLS=1
+```
+
+| Variable | Purpose |
+|----------|---------|
+| `DATABASE_URL` | PostgreSQL connection string (backend, non-Docker) |
+| `CORS_ORIGINS` | Allowed frontend origin for API requests |
+| `NEXT_PUBLIC_API_URL` | Backend API URL (no trailing slash) |
+| `NEXT_DISABLE_DEVTOOLS` | Optional — hides Next.js devtools overlay |
+
+For **production**, set these in the Vercel and Render dashboards — see [`DEPLOYMENT.md`](DEPLOYMENT.md).
 
 ---
 
@@ -105,11 +137,7 @@ npm run docker:reset     # stop containers and wipe database volume
 
 ### 2. Frontend (Next.js on host)
 
-**Step 1.** Run first-time configuration:
-
-```powershell
-npm run env:setup
-```
+**Step 1.** Create `frontend/.env.local` — see [Local configuration](#local-configuration).
 
 **Step 2.** Install dependencies:
 
@@ -141,7 +169,7 @@ docker compose exec api python seed.py
 **Terminal 2 — frontend:**
 
 ```powershell
-npm run env:setup
+# Create frontend/.env.local first — see Local configuration
 npm run frontend:install
 npm run dev
 ```
@@ -438,6 +466,7 @@ Requires local PostgreSQL 17+.
 ```powershell
 createdb snippet_search
 cd backend
+# Create backend/.env — see Local configuration
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -518,8 +547,8 @@ npm run docker:seed
 **Frontend cannot reach the API**
 
 1. Confirm the API is running: `npm run docker:health`
-2. Run `npm run env:setup` from the project root if you have not configured the frontend yet
-3. Restart the Next.js dev server after changing local configuration
+2. Create `frontend/.env.local` if missing — see [Local configuration](#local-configuration)
+3. Restart the Next.js dev server after changing local config
 
 **Port already in use**
 
