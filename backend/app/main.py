@@ -16,6 +16,12 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Snippet Search API", lifespan=lifespan)
 
+
+@app.get("/", include_in_schema=False)
+def root() -> dict[str, str]:
+    return {"service": "Snippet Search API", "health": "/health", "docs": "/docs"}
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
