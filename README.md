@@ -519,7 +519,9 @@ python seed.py
 | `npm run docker:up` | Build and start Docker containers |
 | `npm run docker:down` | Stop Docker containers |
 | `npm run docker:reset` | Stop containers and remove database volume |
-| `npm run docker:seed` | Seed sample snippets |
+| `npm run docker:seed` | Seed sample snippets (Docker Postgres, local) |
+| `npm run backend:venv` | Create backend Python venv and install dependencies |
+| `npm run seed:neon` | Seed Neon/production DB (`DATABASE_URL` must be set) |
 | `npm run docker:health` | Check API health |
 | `npm run docker:logs` | Tail API container logs |
 | `npm run docker:psql` | Open PostgreSQL shell |

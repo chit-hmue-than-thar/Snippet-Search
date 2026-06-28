@@ -95,17 +95,15 @@ https://snippet-search-api.vercel.app/docs
 
 Run **locally** against your Neon database (one time):
 
-```powershell
-cd backend
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-
-set DATABASE_URL=postgresql://YOUR_NEON_CONNECTION_STRING
-python seed.py
+```cmd
+npm run backend:venv
+set "DATABASE_URL=postgresql://YOUR_NEON_CONNECTION_STRING"
+npm run seed:neon
 ```
 
 Expected: `Seeded 25 snippets.`
+
+*(Use quotes around `DATABASE_URL` on Windows cmd if the URL contains `&`.)*
 
 Test search:
 
