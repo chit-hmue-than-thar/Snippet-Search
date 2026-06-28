@@ -17,11 +17,58 @@ More detail: [`PRD.md`](PRD.md) · [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`DEP
 
 ## Prerequisites
 
-- **Docker Desktop** — runs PostgreSQL + API locally (`docker compose`)
-- **Node.js** 22+ and **npm**
-- **Git**
+Install only what matches how you plan to run the app. **Backend and frontend are independent** — you do not need Node.js for the API, and you do not need Python for the UI.
 
-Optional (without Docker): **Python** 3.13+ and **PostgreSQL** 17+
+### Shared
+
+| Tool | Purpose |
+|------|---------|
+| **Git** | Clone the repo and push to GitHub for deployment |
+
+### Backend (FastAPI + PostgreSQL)
+
+| Tool | When needed | Purpose |
+|------|-------------|---------|
+| **Docker Desktop** | Recommended local setup | Runs PostgreSQL and the FastAPI API via `docker compose` — no local Python or Postgres install required |
+| **Python** 3.12+ | Without Docker | Create a venv, install `backend/requirements.txt`, run `uvicorn` and `seed.py` |
+| **PostgreSQL** 17+ | Without Docker | Database when not using the `db` service in `docker-compose.yml` |
+
+**Backend stack** (installed via `pip` or inside the Docker image — not global prerequisites):
+
+- **FastAPI** — REST API
+- **Uvicorn** — ASGI server
+- **SQLAlchemy** + **psycopg2** — PostgreSQL access
+- **Pydantic** — request/response validation and settings
+
+**Local URLs:** API `http://localhost:8000` · Swagger UI `http://localhost:8000/docs` · DB port `5432`
+
+### Frontend (Next.js)
+
+| Tool | Purpose |
+|------|---------|
+| **Node.js** 22+ | Runtime for Next.js (`next dev`, `next build`) |
+| **npm** | Install frontend dependencies and run root convenience scripts (`npm run setup`, `npm run dev`) |
+| **Running API** | Frontend calls the backend over HTTP — set `NEXT_PUBLIC_API_URL` in `frontend/.env.local` (local Docker API or production URL) |
+
+**Frontend stack** (installed via `npm install` in `frontend/` — not global prerequisites):
+
+- **Next.js** 15 — App Router, dev server, production build
+- **React** 19 — UI
+- **TypeScript** — typed components and API client
+- **MUI (Material UI)** — layout, forms, dialogs
+
+**Local URL:** `http://localhost:3000`
+
+> Node.js is **not** part of the backend. It is only required for the Next.js frontend and the root `package.json` scripts that wire frontend + Docker together.
+
+### What to install
+
+| Goal | Install |
+|------|---------|
+| **Full stack locally** (README default) | Git, Docker Desktop, Node.js 22+, npm |
+| **Backend / API only** | Git + Docker Desktop **or** Git + Python 3.12+ + PostgreSQL 17+ |
+| **Frontend only** | Git, Node.js 22+, npm (+ a running API) |
+| **Deploy to production** | GitHub, Vercel, Neon (or Render) — see [DEPLOYMENT-VERCEL.md](DEPLOYMENT-VERCEL.md) |
 
 ---
 
