@@ -6,7 +6,17 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.core.config import settings
 from app.models import Base
 
-engine = create_engine(settings.DATABASE_URL)
+
+def _connect_args() -> dict:
+    url = settings.DATABASE_URL.lower()
+    if "sslmode=" in url:
+        return {}
+    if any(host in url for host in ("neon.tech", "render.com", "supabase.co", "railway.app")):
+        return {"sslmode": "require"}
+    return {}
+
+
+engine = create_engine(settings.DATABASE_URL, connect_args=_connect_args())
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 

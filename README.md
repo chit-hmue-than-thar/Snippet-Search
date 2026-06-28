@@ -2,7 +2,7 @@
 
 Full-stack app for saving and searching short text snippets. **FastAPI** + **PostgreSQL 17** + **Next.js 15**.
 
-Planning docs: [`PRD.md`](PRD.md) · [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`PLAN.md`](PLAN.md)
+Planning docs: [`PRD.md`](PRD.md) · [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`PLAN.md`](PLAN.md) · [`DEPLOYMENT.md`](DEPLOYMENT.md) (production / Vercel)
 
 ---
 
@@ -46,6 +46,14 @@ npm run dev
 ```
 
 Open **http://localhost:3000**
+
+---
+
+## Production deployment
+
+Deploy the frontend to **Vercel** and the API + database to **Render**. Full step-by-step guide:
+
+**[DEPLOYMENT.md](DEPLOYMENT.md)**
 
 ---
 
