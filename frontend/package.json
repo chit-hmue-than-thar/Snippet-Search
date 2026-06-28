@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "env:setup": "node -e \"const fs=require('fs');if(!fs.existsSync('.env.local')){fs.copyFileSync('.env.local.example','.env.local');console.log('Created .env.local')}else{console.log('.env.local already exists')}\"",
+    "env:setup": "node -e \"const fs=require('fs');const p='.env.local';if(!fs.existsSync(p)){fs.writeFileSync(p,'NEXT_PUBLIC_API_URL=http://localhost:8000\\nNEXT_DISABLE_DEVTOOLS=1\\n');console.log('Created .env.local')}else{console.log('.env.local already exists')}\"",
     "docker:up": "docker compose --project-directory .. up -d --build",
     "docker:down": "docker compose --project-directory .. down",
     "docker:reset": "docker compose --project-directory .. down -v",

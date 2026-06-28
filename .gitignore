@@ -4,9 +4,10 @@ __pycache__/
 .venv/
 venv/
 
-# Environment files (all local variants; example templates stay tracked)
+# Environment files (never commit — use platform dashboards in production)
 .env
 .env.*
+.env*.example
 .env.local
 .env.development
 .env.development.local
@@ -14,9 +15,6 @@ venv/
 .env.test.local
 .env.production
 .env.production.local
-!.env.example
-!.env.local.example
-!.env*.example
 
 # Node
 node_modules/
