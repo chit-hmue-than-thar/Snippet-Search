@@ -101,7 +101,7 @@ Goal: understand *enough* to explain every line you submit. Focus on concepts di
 ### Full-stack wiring (30 min)
 
 - Run FastAPI on `http://localhost:8000`, Next.js on `http://localhost:3000`
-- Set `NEXT_PUBLIC_API_URL=http://localhost:8000` in frontend `.env.local`
+- Run `npm run env:setup` from the project root before starting the frontend
 - Enable CORS on FastAPI for `http://localhost:3000`
 - Test with Swagger UI at `http://localhost:8000/docs` before building UI
 
@@ -114,7 +114,7 @@ Goal: understand *enough* to explain every line you submit. Focus on concepts di
 | Backend folder layout (`app/api`, `app/models`, `app/schemas`, `app/crud`) | Frontend is **Next.js** per challenge (template uses React) |
 | `get_db` dependency injection pattern | Simpler — no auth, no users |
 | Pydantic schemas separate from SQLAlchemy models | Single `snippets` resource instead of items/users |
-| `.env` + settings pattern | Use from day one |
+| Settings via pydantic-settings | Use from day one |
 | `docker-compose.yml` + `backend/Dockerfile` | **Project init** — Postgres 17 + API (see full-stack-fastapi-template) |
 | Seed / initial data approach | Use the 25 legal snippets from `INTERN_GUIDELINE.md` |
 
