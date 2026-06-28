@@ -1,8 +1,9 @@
+<<<<<<< HEAD
 # Snippet Search
 
 Full-stack app for saving and searching short text snippets. **FastAPI** + **PostgreSQL 17** + **Next.js 15**.
 
-Planning docs: [`PRD.md`](PRD.md) · [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`PLAN.md`](PLAN.md) · [`DEPLOYMENT.md`](DEPLOYMENT.md) (production / Vercel)
+Planning docs: [`PRD.md`](PRD.md) · [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`PLAN.md`](PLAN.md) · [`DEPLOYMENT.md`](DEPLOYMENT.md) (Render) · [`DEPLOYMENT-VERCEL.md`](DEPLOYMENT-VERCEL.md) (Vercel + Neon, no card)
 
 ---
 
@@ -52,9 +53,11 @@ Open **http://localhost:3000**
 
 ## Production deployment
 
-Deploy the frontend to **Vercel** and the API + database to **Render**. Full step-by-step guide:
+**No credit card (recommended):** Vercel frontend + Vercel backend + Neon database  
+→ **[DEPLOYMENT-VERCEL.md](DEPLOYMENT-VERCEL.md)** (step-by-step)
 
-**[DEPLOYMENT.md](DEPLOYMENT.md)**
+**Alternative:** Vercel frontend + Render API  
+→ **[DEPLOYMENT.md](DEPLOYMENT.md)**
 
 ---
 
