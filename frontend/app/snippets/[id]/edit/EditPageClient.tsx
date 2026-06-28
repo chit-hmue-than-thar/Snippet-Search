@@ -2,6 +2,7 @@
 
 import { useParams, useSearchParams } from "next/navigation";
 import EditSnippetForm from "@/components/EditSnippetForm";
+import ErrorMessage from "@/components/ErrorMessage";
 import LoadingMessage from "@/components/LoadingMessage";
 import SnippetNotFound from "@/components/SnippetNotFound";
 import type { SnippetFormValues } from "@/components/SnippetForm";
@@ -23,13 +24,23 @@ export default function EditPageClient() {
   const id = Number(params.id);
   const returnQuery = searchParams.get("q");
   const returnPage = parseReturnPage(searchParams.get("page"));
-  const { snippet, notFound, loading } = useSnippet(id);
+  const { snippet, notFound, loading, error } = useSnippet(id);
 
   if (notFound) {
     return <SnippetNotFound />;
   }
 
-  if (loading || !snippet) {
+  if (loading) {
+    return <LoadingMessage />;
+  }
+
+  if (error) {
+    return (
+      <ErrorMessage message={error} onRetry={() => window.location.reload()} />
+    );
+  }
+
+  if (!snippet) {
     return <LoadingMessage />;
   }
 
